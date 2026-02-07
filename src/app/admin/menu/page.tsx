@@ -331,7 +331,7 @@ function MenuItemForm({
   return (
     <div className="bg-white rounded-xl border border-secondary-dark/20 p-6 mb-6">
       <h2 className="text-xl font-bold text-primary mb-4">
-        {item ? 'Edit Menu Item' : 'New Menu Item'}
+        {item ? 'Edit Item' : 'New Item'}
       </h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
