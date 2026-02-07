@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <circle cx="100" cy="100" r="95" fill="#3d4a2d"/>
+  <!-- Coffee cup body -->
+  <path d="M60 95 C60 95 55 130 65 145 C75 160 125 160 135 145 C145 130 140 95 140 95" fill="#f5e6c8" stroke="#8b7355" stroke-width="2"/>
+  <!-- Cup handle -->
+  <path d="M140 100 C155 100 160 115 155 125 C150 135 140 130 140 130" fill="none" stroke="#f5e6c8" stroke-width="4" stroke-linecap="round"/>
+  <!-- Steam/wave lines inside cup -->
+  <path d="M75 110 C85 105 95 115 105 110 C115 105 125 115 130 110" fill="none" stroke="#8b7355" stroke-width="2"/>
+  <path d="M75 120 C85 115 95 125 105 120 C115 115 125 125 130 120" fill="none" stroke="#8b7355" stroke-width="2"/>
+  <path d="M78 130 C88 125 98 135 105 130 C115 125 122 132 127 130" fill="none" stroke="#8b7355" stroke-width="2"/>
+  <!-- Coffee beans -->
+  <ellipse cx="90" cy="60" rx="10" ry="15" fill="#8b7355" transform="rotate(-20 90 60)"/>
+  <line x1="85" y1="50" x2="90" y2="70" stroke="#3d4a2d" stroke-width="1.5" transform="rotate(-20 90 60)"/>
+  <ellipse cx="115" cy="55" rx="10" ry="15" fill="#c4a97d" transform="rotate(15 115 55)"/>
+  <line x1="110" y1="45" x2="115" y2="65" stroke="#3d4a2d" stroke-width="1.5" transform="rotate(15 115 55)"/>
+  <!-- Text -->
+  <text x="100" y="185" text-anchor="middle" font-family="Georgia, serif" font-size="16" font-weight="bold" fill="#f5e6c8" font-style="italic">Moonbeam Cafe</text>
+</svg>
