@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useAuthStore } from '@/stores/auth-store'
 import type { Profile, UserRole } from '@/lib/types/database'
@@ -10,7 +10,7 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'all' | UserRole>('all')
   const { profile } = useAuthStore()
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
     async function fetchUsers() {

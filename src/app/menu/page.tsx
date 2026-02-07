@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { MENU_ITEMS, MENU_CATEGORIES, type MenuItemData } from '@/lib/menu-data'
@@ -17,7 +17,7 @@ export default function MenuPage() {
   const [customizingItem, setCustomizingItem] = useState<MenuItem | null>(null)
   const cartItemCount = useCartStore(s => s.getItemCount())
   const cartTotal = useCartStore(s => s.getTotal())
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
     async function fetchMenu() {

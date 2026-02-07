@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { MENU_CATEGORIES, MENU_ITEMS } from '@/lib/menu-data'
 import type { MenuItem } from '@/lib/types/database'
@@ -13,7 +13,7 @@ export default function AdminMenuPage() {
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null)
   const [seeding, setSeeding] = useState(false)
   const { profile } = useAuthStore()
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   async function fetchMenu() {
     const { data } = await supabase
