@@ -20,7 +20,7 @@ const DEFAULTS: StoreSettings = {
   phone: '(412) 251-1392',
   hours_weekday: 'Mon–Sat: 7am – 5pm',
   hours_weekend: 'Sunday: 9am – 3pm',
-  instagram_url: 'https://instagram.com/moonbeamcafepgh',
+  instagram_url: 'https://instagram.com/moonbeamcafe',
   facebook_url: 'https://facebook.com/MoonbeamCafePgh',
   tagline: 'Your neighborhood coffee shop in Pittsburgh, serving handcrafted drinks and fresh food with a warm smile.',
 }
