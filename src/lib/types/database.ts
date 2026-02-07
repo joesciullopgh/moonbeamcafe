@@ -48,10 +48,19 @@ export interface CartItem {
   item_total: number
 }
 
+export interface OrderItem {
+  menu_item_id: string
+  menu_item_name: string
+  quantity: number
+  customizations: { type: string; name: string; price_modifier: number }[]
+  special_instructions: string
+  item_total: number
+}
+
 export interface Order {
   id: string
   user_id: string
-  items: CartItem[]
+  items: OrderItem[]
   total: number
   status: OrderStatus
   stars_earned: number
