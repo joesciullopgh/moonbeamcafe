@@ -1,7 +1,12 @@
+'use client'
+
 import Link from 'next/link'
 import Image from 'next/image'
+import { useStoreSettings } from '@/stores/store-settings'
 
 export default function Home() {
+  const { settings } = useStoreSettings()
+
   return (
     <div>
       {/* Hero Section */}
@@ -14,8 +19,7 @@ export default function Home() {
                 <span className="text-white">with Moonbeam</span>
               </h1>
               <p className="mt-6 text-lg text-secondary/80 max-w-lg">
-                Handcrafted coffee, fresh food, and a warm atmosphere in the heart
-                of Pittsburgh&apos;s Bloomfield neighborhood.
+                {settings.tagline}
               </p>
               <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
                 <Link
@@ -35,7 +39,7 @@ export default function Home() {
             <div className="flex-shrink-0">
               <Image
                 src="/logo.svg"
-                alt="Moonbeam Cafe"
+                alt={settings.store_name}
                 width={280}
                 height={280}
                 className="drop-shadow-2xl"
@@ -91,7 +95,7 @@ export default function Home() {
             Our Signature Creations
           </h2>
           <p className="text-center text-accent mb-12 max-w-2xl mx-auto">
-            Unique drinks you&apos;ll only find at Moonbeam Cafe
+            Unique drinks you&apos;ll only find at {settings.store_name}
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             <DrinkCard
@@ -136,8 +140,8 @@ export default function Home() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
                   <div>
-                    <p className="font-medium">4621 Liberty Avenue</p>
-                    <p className="text-sm text-accent">Pittsburgh, PA</p>
+                    <p className="font-medium">{settings.address_line1}</p>
+                    <p className="text-sm text-accent">{settings.address_line2}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
@@ -145,8 +149,8 @@ export default function Home() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                   </svg>
                   <div>
-                    <a href="tel:+14122511392" className="font-medium hover:text-accent transition-colors">
-                      (412) 251-1392
+                    <a href={`tel:${settings.phone.replace(/[^\d+]/g, '')}`} className="font-medium hover:text-accent transition-colors">
+                      {settings.phone}
                     </a>
                   </div>
                 </div>
@@ -155,8 +159,8 @@ export default function Home() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <div>
-                    <p className="font-medium">Mon–Sat: 7am – 5pm</p>
-                    <p className="font-medium">Sunday: 9am – 3pm</p>
+                    <p className="font-medium">{settings.hours_weekday}</p>
+                    <p className="font-medium">{settings.hours_weekend}</p>
                   </div>
                 </div>
               </div>
@@ -164,7 +168,7 @@ export default function Home() {
             <div className="bg-primary rounded-2xl p-8 text-center">
               <Image
                 src="/logo.svg"
-                alt="Moonbeam Cafe"
+                alt={settings.store_name}
                 width={160}
                 height={160}
                 className="mx-auto mb-6"

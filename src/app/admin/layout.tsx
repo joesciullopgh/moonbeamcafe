@@ -8,8 +8,10 @@ import { useEffect } from 'react'
 const adminLinks = [
   { href: '/admin', label: 'Dashboard' },
   { href: '/admin/menu', label: 'Menu' },
+  { href: '/admin/customizations', label: 'Customizations' },
   { href: '/admin/orders', label: 'Orders' },
   { href: '/admin/users', label: 'Users' },
+  { href: '/admin/settings', label: 'Settings' },
 ]
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -41,8 +43,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-1 overflow-x-auto py-3">
             {adminLinks.map((link) => {
-              // Only show Users link to admins
-              if (link.href === '/admin/users' && profile.role !== 'admin') return null
+              // Only show admin-only links to admins
+              if ((link.href === '/admin/users' || link.href === '/admin/settings') && profile.role !== 'admin') return null
               const isActive = pathname === link.href
               return (
                 <Link
