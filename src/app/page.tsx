@@ -1,11 +1,13 @@
 'use client'
 
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { useStoreSettings } from '@/stores/store-settings'
 import type { MenuItem } from '@/lib/types/database'
+
+const PLACEHOLDER = '/placeholder.svg'
 
 const SIGNATURE_NAMES = [
   'Moonbeam Signature Latte',
@@ -25,22 +27,9 @@ const SIGNATURE_FALLBACKS: Pick<MenuItem, 'name' | 'price' | 'description' | 'im
   { name: 'Maple Pecan Latte', price: 5.75, description: 'Maple syrup, pecan, espresso, and steamed milk', image_url: null },
 ]
 
-// Curated coffee shop photos for the gallery
-const GALLERY_PHOTOS = [
-  { src: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600&h=600&fit=crop', alt: 'Latte art from above' },
-  { src: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=600&h=600&fit=crop', alt: 'Coffee with latte art' },
-  { src: 'https://images.unsplash.com/photo-1555507036-ab1f4038024a?w=600&h=600&fit=crop', alt: 'Fresh baked croissants' },
-  { src: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=600&h=600&fit=crop', alt: 'Cozy cafe interior' },
-  { src: 'https://images.unsplash.com/photo-1442512595331-e89e73853f31?w=600&h=600&fit=crop', alt: 'Coffee beans close up' },
-  { src: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefda?w=600&h=600&fit=crop', alt: 'Espresso being pulled' },
-  { src: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=600&h=600&fit=crop', alt: 'Sunny cafe atmosphere' },
-  { src: 'https://images.unsplash.com/photo-1534687941688-651ccaafbff8?w=600&h=600&fit=crop', alt: 'Iced coffee drink' },
-]
-
 export default function Home() {
   const { settings } = useStoreSettings()
   const [signatureDrinks, setSignatureDrinks] = useState<Pick<MenuItem, 'name' | 'price' | 'description' | 'image_url'>[]>(SIGNATURE_FALLBACKS)
-  const [currentSlide, setCurrentSlide] = useState(0)
   const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
@@ -57,36 +46,19 @@ export default function Home() {
     fetchSignature()
   }, [supabase])
 
-  // Auto-advance gallery carousel
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentSlide(prev => (prev + 1) % GALLERY_PHOTOS.length)
-    }, 4000)
-    return () => clearInterval(timer)
-  }, [])
-
-  const goToSlide = useCallback((index: number) => {
-    setCurrentSlide(index)
-  }, [])
-
   return (
     <div>
-      {/* Hero Section — full-bleed photo background */}
-      <section className="relative h-[85vh] min-h-[500px] max-h-[800px] overflow-hidden">
-        <Image
-          src="https://images.unsplash.com/photo-1445116572660-236099ec97a0?w=1600&h=900&fit=crop"
-          alt="Warm cafe atmosphere"
-          fill
-          className="object-cover"
-          priority
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-primary/70 via-primary/50 to-primary/80" />
+      {/* Hero Section */}
+      <section className="relative h-[85vh] min-h-[500px] max-h-[800px] overflow-hidden bg-primary">
+        <div className="absolute inset-0 opacity-10">
+          <Image src={PLACEHOLDER} alt="" fill className="object-cover" priority />
+        </div>
         <div className="relative h-full flex flex-col items-center justify-center text-center px-4">
           <Image
             src="/logo.svg"
             alt=""
-            width={80}
-            height={80}
+            width={100}
+            height={100}
             className="mb-6 drop-shadow-lg"
             aria-hidden="true"
           />
@@ -162,83 +134,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Photo Gallery Carousel — Instagram-inspired */}
-      <section className="py-16 sm:py-20 bg-secondary/30">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-10">
-            <h2 className="text-3xl sm:text-4xl font-bold text-primary mb-3">
-              From Our Shop
-            </h2>
-            <p className="text-accent max-w-lg mx-auto">
-              A glimpse into the everyday magic at {settings.store_name}
-            </p>
-          </div>
-
-          {/* Mobile carousel */}
-          <div className="md:hidden">
-            <div className="relative aspect-square rounded-2xl overflow-hidden shadow-lg">
-              <Image
-                src={GALLERY_PHOTOS[currentSlide].src}
-                alt={GALLERY_PHOTOS[currentSlide].alt}
-                fill
-                className="object-cover transition-opacity duration-500"
-                sizes="(max-width: 768px) 100vw"
-              />
-            </div>
-            <div className="flex justify-center gap-2 mt-4">
-              {GALLERY_PHOTOS.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => goToSlide(i)}
-                  className={`w-2 h-2 rounded-full transition-all ${
-                    i === currentSlide ? 'bg-primary w-6' : 'bg-primary/30'
-                  }`}
-                  aria-label={`Go to photo ${i + 1}`}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Desktop grid */}
-          <div className="hidden md:grid grid-cols-4 gap-3">
-            {GALLERY_PHOTOS.map((photo, i) => (
-              <div
-                key={i}
-                className="relative aspect-square rounded-xl overflow-hidden group cursor-pointer shadow-sm hover:shadow-lg transition-shadow"
-              >
-                <Image
-                  src={photo.src}
-                  alt={photo.alt}
-                  fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-500"
-                  sizes="(max-width: 1280px) 25vw, 300px"
-                />
-                <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/20 transition-colors duration-300" />
-              </div>
-            ))}
-          </div>
-
-          {/* Follow CTA */}
-          {settings.instagram_url && (
-            <div className="text-center mt-8">
-              <a
-                href={settings.instagram_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-primary font-semibold hover:text-primary-light transition-colors"
-              >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
-                </svg>
-                Follow us on Instagram
-              </a>
-            </div>
-          )}
-        </div>
-      </section>
-
       {/* Signature Drinks Section */}
-      <section className="py-16 sm:py-20 bg-white">
+      <section className="py-16 sm:py-20 bg-secondary/30">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl sm:text-4xl font-bold text-primary mb-3">
@@ -255,7 +152,6 @@ export default function Home() {
                 name={drink.name}
                 price={`$${drink.price.toFixed(2)}`}
                 description={drink.description}
-                imageUrl={drink.image_url}
               />
             ))}
           </div>
@@ -274,12 +170,12 @@ export default function Home() {
       <section className="relative overflow-hidden">
         <div className="grid grid-cols-1 md:grid-cols-2">
           {/* Photo side */}
-          <div className="relative h-80 md:h-auto md:min-h-[500px]">
+          <div className="relative h-80 md:h-auto md:min-h-[500px] bg-primary/5">
             <Image
-              src="https://images.unsplash.com/photo-1559925393-8be0ec4767c8?w=800&h=600&fit=crop"
-              alt="Inside the cafe"
+              src={PLACEHOLDER}
+              alt="Moonbeam Cafe"
               fill
-              className="object-cover"
+              className="object-contain p-8"
               sizes="(max-width: 768px) 100vw, 50vw"
             />
           </div>
@@ -344,12 +240,12 @@ export default function Home() {
                   </Link>
                 </div>
               </div>
-              <div className="relative h-64 md:h-auto">
+              <div className="relative h-64 md:h-auto bg-primary/5">
                 <Image
-                  src="https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=800&h=600&fit=crop"
-                  alt="Beautifully crafted cappuccino"
+                  src={PLACEHOLDER}
+                  alt="Moonbeam Cafe"
                   fill
-                  className="object-cover"
+                  className="object-contain p-8"
                   sizes="(max-width: 768px) 100vw, 50vw"
                 />
               </div>
@@ -358,7 +254,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Visit Us Section */}
+      {/* Visit Us + Social */}
       <section className="py-16 sm:py-20 bg-white">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
@@ -405,33 +301,41 @@ export default function Home() {
               </p>
             </div>
           </div>
+          {/* Social links */}
+          {settings.instagram_url && (
+            <div className="text-center mt-10">
+              <a
+                href={settings.instagram_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-primary font-semibold hover:text-primary-light transition-colors"
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                </svg>
+                Follow us on Instagram
+              </a>
+            </div>
+          )}
         </div>
       </section>
     </div>
   )
 }
 
-function DrinkCard({ name, price, description, imageUrl }: { name: string; price: string; description: string; imageUrl?: string | null }) {
+function DrinkCard({ name, price, description }: { name: string; price: string; description: string }) {
   return (
     <Link href="/menu" className="group block">
       <div className="bg-white rounded-2xl shadow-sm border border-secondary-dark/20 hover:shadow-lg transition-all overflow-hidden">
-        {imageUrl ? (
-          <div className="relative w-full h-52 overflow-hidden">
-            <Image
-              src={imageUrl}
-              alt={name}
-              fill
-              className="object-cover group-hover:scale-105 transition-transform duration-500"
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            />
-          </div>
-        ) : (
-          <div className="w-full h-40 bg-gradient-to-br from-primary/10 to-secondary flex items-center justify-center">
-            <svg className="w-12 h-12 text-primary/20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-          </div>
-        )}
+        <div className="relative w-full h-48 bg-primary/5">
+          <Image
+            src={PLACEHOLDER}
+            alt={name}
+            fill
+            className="object-contain p-4 group-hover:scale-105 transition-transform duration-500"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          />
+        </div>
         <div className="p-5">
           <div className="flex items-center justify-between mb-1.5">
             <h3 className="text-lg font-semibold text-primary group-hover:text-primary-light transition-colors">{name}</h3>

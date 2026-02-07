@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3d4a2d;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2d3820;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="cup" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#f5e6c8;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e8d4a8;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="coffee" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#8b7355;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#6e5a43;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="800" height="600" fill="url(#bg)"/>
+  <!-- Decorative dots -->
+  <circle cx="120" cy="80" r="3" fill="#f5e6c8" opacity="0.15"/>
+  <circle cx="680" cy="120" r="4" fill="#f5e6c8" opacity="0.12"/>
+  <circle cx="200" cy="500" r="3" fill="#f5e6c8" opacity="0.1"/>
+  <circle cx="600" cy="480" r="5" fill="#f5e6c8" opacity="0.08"/>
+  <circle cx="350" cy="60" r="2" fill="#f5e6c8" opacity="0.15"/>
+  <circle cx="500" cy="540" r="3" fill="#f5e6c8" opacity="0.12"/>
+  <!-- Cup body -->
+  <path d="M330 260 L320 420 Q320 450 350 450 L450 450 Q480 450 480 420 L470 260 Z" fill="url(#cup)" opacity="0.9"/>
+  <!-- Coffee surface -->
+  <ellipse cx="400" cy="290" rx="72" ry="14" fill="url(#coffee)" opacity="0.9"/>
+  <!-- Latte art hint -->
+  <ellipse cx="400" cy="288" rx="30" ry="6" fill="#f5e6c8" opacity="0.3"/>
+  <ellipse cx="400" cy="286" rx="15" ry="3" fill="#f5e6c8" opacity="0.2"/>
+  <!-- Cup rim -->
+  <ellipse cx="400" cy="260" rx="75" ry="16" fill="none" stroke="#f5e6c8" stroke-width="4" opacity="0.8"/>
+  <!-- Handle -->
+  <path d="M470 290 Q520 290 520 340 Q520 390 470 390" fill="none" stroke="url(#cup)" stroke-width="12" stroke-linecap="round" opacity="0.9"/>
+  <!-- Steam lines -->
+  <path d="M370 230 Q365 200 375 170" fill="none" stroke="#f5e6c8" stroke-width="3" stroke-linecap="round" opacity="0.25">
+    <animate attributeName="d" values="M370 230 Q365 200 375 170;M370 230 Q375 200 365 170;M370 230 Q365 200 375 170" dur="3s" repeatCount="indefinite"/>
+  </path>
+  <path d="M400 225 Q395 190 405 155" fill="none" stroke="#f5e6c8" stroke-width="3" stroke-linecap="round" opacity="0.3">
+    <animate attributeName="d" values="M400 225 Q395 190 405 155;M400 225 Q405 190 395 155;M400 225 Q395 190 405 155" dur="2.5s" repeatCount="indefinite"/>
+  </path>
+  <path d="M430 230 Q425 200 435 170" fill="none" stroke="#f5e6c8" stroke-width="3" stroke-linecap="round" opacity="0.25">
+    <animate attributeName="d" values="M430 230 Q425 200 435 170;M430 230 Q435 200 425 170;M430 230 Q425 200 435 170" dur="3.5s" repeatCount="indefinite"/>
+  </path>
+  <!-- Saucer -->
+  <ellipse cx="400" cy="455" rx="95" ry="12" fill="#f5e6c8" opacity="0.4"/>
+  <!-- Text -->
+  <text x="400" y="520" text-anchor="middle" font-family="Georgia, serif" font-size="20" fill="#f5e6c8" opacity="0.5">Moonbeam Cafe</text>
+</svg>
