@@ -62,19 +62,34 @@ export default function Header() {
         )}
 
         <div className="flex h-14 items-center justify-between">
-          {/* Logo / Brand */}
-          <Link href="/" className="flex items-center gap-2.5 shrink-0">
-            <Image
-              src="/logo.svg"
-              alt=""
-              width={32}
-              height={32}
-              aria-hidden="true"
-            />
-            <span className="text-secondary font-semibold text-lg tracking-tight">
-              Moonbeam Cafe
-            </span>
-          </Link>
+          {/* Mobile hamburger (left) + Logo */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="text-secondary p-1 md:hidden"
+              aria-label="Toggle menu"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {mobileMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
+            <Link href="/" className="flex items-center gap-2.5 shrink-0">
+              <Image
+                src="/logo.svg"
+                alt=""
+                width={32}
+                height={32}
+                aria-hidden="true"
+              />
+              <span className="text-secondary font-semibold text-lg tracking-tight">
+                Moonbeam Cafe
+              </span>
+            </Link>
+          </div>
 
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-5">
@@ -208,8 +223,8 @@ export default function Header() {
             )}
           </nav>
 
-          {/* Mobile: cart + hamburger */}
-          <div className="flex items-center gap-3 md:hidden">
+          {/* Mobile: cart (right side) */}
+          <div className="flex items-center md:hidden">
             <Link
               href={cartItemCount > 0 ? '/cart' : '/menu'}
               className="relative text-secondary/80 hover:text-white transition-colors"
@@ -224,19 +239,6 @@ export default function Header() {
                 </span>
               )}
             </Link>
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="text-secondary p-1"
-              aria-label="Toggle menu"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                {mobileMenuOpen ? (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                ) : (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                )}
-              </svg>
-            </button>
           </div>
         </div>
 
