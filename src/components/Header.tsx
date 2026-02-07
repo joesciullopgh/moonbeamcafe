@@ -3,9 +3,24 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
+import { useAuthStore } from '@/stores/auth-store'
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { user, profile, loading } = useAuthStore()
+  const router = useRouter()
+  const supabase = createClient()
+
+  async function handleSignOut() {
+    await supabase.auth.signOut()
+    setMobileMenuOpen(false)
+    router.push('/')
+    router.refresh()
+  }
+
+  const isStaff = profile?.role === 'staff' || profile?.role === 'admin'
 
   return (
     <header className="bg-primary sticky top-0 z-50 shadow-md">
@@ -33,9 +48,42 @@ export default function Header() {
             <Link href="/menu" className="text-secondary hover:text-white transition-colors text-sm font-medium">
               Menu
             </Link>
-            <Link href="/login" className="text-secondary hover:text-white transition-colors text-sm font-medium">
-              Sign In
-            </Link>
+            {user && (
+              <Link href="/orders" className="text-secondary hover:text-white transition-colors text-sm font-medium">
+                Orders
+              </Link>
+            )}
+            {isStaff && (
+              <Link href="/admin" className="text-secondary hover:text-white transition-colors text-sm font-medium">
+                Admin
+              </Link>
+            )}
+            {!loading && (
+              <>
+                {user ? (
+                  <div className="flex items-center gap-4">
+                    <Link href="/profile" className="text-secondary hover:text-white transition-colors text-sm font-medium">
+                      {profile?.first_name || 'Profile'}
+                    </Link>
+                    {profile && (
+                      <span className="text-secondary/70 text-xs">
+                        {profile.stars} stars
+                      </span>
+                    )}
+                    <button
+                      onClick={handleSignOut}
+                      className="text-secondary/70 hover:text-white transition-colors text-sm"
+                    >
+                      Sign Out
+                    </button>
+                  </div>
+                ) : (
+                  <Link href="/login" className="text-secondary hover:text-white transition-colors text-sm font-medium">
+                    Sign In
+                  </Link>
+                )}
+              </>
+            )}
             <Link
               href="/menu"
               className="bg-secondary text-primary px-4 py-2 rounded-full text-sm font-semibold hover:bg-secondary-dark transition-colors"
@@ -63,27 +111,43 @@ export default function Header() {
         {/* Mobile Nav */}
         {mobileMenuOpen && (
           <nav className="md:hidden pb-4 space-y-2">
-            <Link
-              href="/"
-              className="block text-secondary hover:text-white transition-colors py-2 text-sm font-medium"
-              onClick={() => setMobileMenuOpen(false)}
-            >
+            <Link href="/" className="block text-secondary hover:text-white transition-colors py-2 text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>
               Home
             </Link>
-            <Link
-              href="/menu"
-              className="block text-secondary hover:text-white transition-colors py-2 text-sm font-medium"
-              onClick={() => setMobileMenuOpen(false)}
-            >
+            <Link href="/menu" className="block text-secondary hover:text-white transition-colors py-2 text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>
               Menu
             </Link>
-            <Link
-              href="/login"
-              className="block text-secondary hover:text-white transition-colors py-2 text-sm font-medium"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Sign In
-            </Link>
+            {user && (
+              <Link href="/orders" className="block text-secondary hover:text-white transition-colors py-2 text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>
+                Orders
+              </Link>
+            )}
+            {isStaff && (
+              <Link href="/admin" className="block text-secondary hover:text-white transition-colors py-2 text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>
+                Admin
+              </Link>
+            )}
+            {!loading && (
+              <>
+                {user ? (
+                  <>
+                    <Link href="/profile" className="block text-secondary hover:text-white transition-colors py-2 text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>
+                      Profile {profile ? `(${profile.stars} stars)` : ''}
+                    </Link>
+                    <button
+                      onClick={handleSignOut}
+                      className="block text-secondary/70 hover:text-white transition-colors py-2 text-sm"
+                    >
+                      Sign Out
+                    </button>
+                  </>
+                ) : (
+                  <Link href="/login" className="block text-secondary hover:text-white transition-colors py-2 text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>
+                    Sign In
+                  </Link>
+                )}
+              </>
+            )}
             <Link
               href="/menu"
               className="inline-block bg-secondary text-primary px-4 py-2 rounded-full text-sm font-semibold hover:bg-secondary-dark transition-colors"
