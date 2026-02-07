@@ -16,7 +16,17 @@ const STATUS_COLORS: Record<OrderStatus, string> = {
   cancelled: 'bg-red-100 text-red-700',
 }
 
+const STATUS_LABELS: Record<OrderStatus, string> = {
+  pending: 'Pending',
+  confirmed: 'Confirmed',
+  preparing: 'In Progress',
+  ready: 'Ready for Pickup',
+  completed: 'Completed',
+  cancelled: 'Cancelled',
+}
+
 const STATUS_STEPS: OrderStatus[] = ['pending', 'confirmed', 'preparing', 'ready', 'completed']
+const STEP_LABELS = ['Received', 'Confirmed', 'In Progress', 'Ready', 'Complete']
 
 export default function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
@@ -88,10 +98,26 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold text-primary">Order #{order.id.slice(0, 8)}</h1>
-        <span className={`px-3 py-1 rounded-full text-sm font-medium ${STATUS_COLORS[order.status]}`}>
-          {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+        <span className={`px-3 py-1.5 rounded-full text-sm font-bold ${STATUS_COLORS[order.status]}`}>
+          {STATUS_LABELS[order.status]}
         </span>
       </div>
+
+      {/* Ready for pickup banner */}
+      {order.status === 'ready' && (
+        <div className="bg-green-50 border-2 border-green-400 rounded-xl p-5 mb-6 text-center">
+          <p className="text-green-800 text-xl font-bold">Your order is ready for pickup!</p>
+          <p className="text-green-700 text-sm mt-1">Head to the counter to grab your order.</p>
+        </div>
+      )}
+
+      {/* Being prepared banner */}
+      {order.status === 'preparing' && (
+        <div className="bg-purple-50 border-2 border-purple-300 rounded-xl p-4 mb-6 text-center">
+          <p className="text-purple-800 text-lg font-semibold">Your order is being prepared</p>
+          <p className="text-purple-600 text-sm mt-1">We&apos;ll let you know when it&apos;s ready.</p>
+        </div>
+      )}
 
       {/* Status Progress */}
       {order.status !== 'cancelled' && (
@@ -116,7 +142,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                       i + 1
                     )}
                   </div>
-                  <span className="text-[10px] text-accent mt-1 capitalize hidden sm:block">{step}</span>
+                  <span className="text-[10px] text-accent mt-1 hidden sm:block">{STEP_LABELS[i]}</span>
                 </div>
                 {i < STATUS_STEPS.length - 1 && (
                   <div className={`flex-1 h-0.5 mx-1 ${i < currentStep ? 'bg-primary' : 'bg-gray-200'}`} />

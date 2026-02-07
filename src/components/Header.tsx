@@ -110,9 +110,14 @@ export default function Header() {
               </>
             )}
             {isStaff && (
-              <Link href="/admin" className="text-secondary/80 hover:text-white transition-colors text-sm font-medium">
-                Admin
-              </Link>
+              <>
+                <Link href="/staff" className="text-secondary/80 hover:text-white transition-colors text-sm font-medium">
+                  Order Queue
+                </Link>
+                <Link href="/admin" className="text-secondary/80 hover:text-white transition-colors text-sm font-medium">
+                  Admin
+                </Link>
+              </>
             )}
 
             {/* Cart */}
@@ -197,6 +202,18 @@ export default function Header() {
                           </svg>
                           Order History
                         </Link>
+                        {isStaff && (
+                          <Link
+                            href="/staff"
+                            className="flex items-center gap-2 px-4 py-2.5 text-sm text-text-dark hover:bg-primary/5 transition-colors"
+                            onClick={() => setAccountMenuOpen(false)}
+                          >
+                            <svg className="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                            </svg>
+                            Order Queue
+                          </Link>
+                        )}
                         <div className="border-t border-gray-100 mt-1 pt-1">
                           <button
                             onClick={handleSignOut}
@@ -242,71 +259,84 @@ export default function Header() {
           </div>
         </div>
 
-        {/* Mobile Nav */}
+        {/* Mobile Nav — slide-down panel */}
         {mobileMenuOpen && (
-          <nav className="md:hidden pb-4 border-t border-secondary/15 pt-3">
-            {/* Greeting on mobile */}
-            {!loading && user && profile && (
-              <div className="pb-3 mb-3 border-b border-secondary/15">
-                <p className="text-secondary text-sm font-medium">{getGreeting()}, {displayName}</p>
-                <p className="text-secondary/50 text-xs">{profile.stars} stars</p>
-              </div>
-            )}
-
-            <div className="space-y-1">
-              <MobileNavLink href="/" label="Home" onClick={() => setMobileMenuOpen(false)} />
-              <MobileNavLink href="/menu" label="Menu" onClick={() => setMobileMenuOpen(false)} />
-
-              {user && (
-                <>
-                  <MobileNavLink href="/orders" label="Orders" onClick={() => setMobileMenuOpen(false)} />
-                  <MobileNavLink href="/rewards" label="Rewards" onClick={() => setMobileMenuOpen(false)} />
-                  <MobileNavLink href="/favorites" label="Favorites" onClick={() => setMobileMenuOpen(false)} />
-                </>
+          <div className="md:hidden absolute left-0 right-0 top-full z-50 bg-white shadow-xl border-t-2 border-secondary-dark">
+            <nav className="max-w-7xl mx-auto px-4 py-4">
+              {/* Greeting on mobile */}
+              {!loading && user && profile && (
+                <div className="pb-4 mb-3 border-b border-gray-200">
+                  <p className="text-primary font-semibold">{getGreeting()}, {displayName}</p>
+                  <p className="text-accent text-sm">{profile.stars} stars</p>
+                </div>
               )}
 
-              {isStaff && (
-                <MobileNavLink href="/admin" label="Admin" onClick={() => setMobileMenuOpen(false)} />
-              )}
-            </div>
+              <div className="space-y-1">
+                <MobileNavLink href="/" label="Home" onClick={() => setMobileMenuOpen(false)} icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />} />
+                <MobileNavLink href="/menu" label="Menu" onClick={() => setMobileMenuOpen(false)} icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />} />
 
-            {!loading && (
-              <div className="mt-3 pt-3 border-t border-secondary/15">
-                {user ? (
-                  <div className="space-y-1">
-                    <MobileNavLink href="/profile" label="Edit Profile" onClick={() => setMobileMenuOpen(false)} />
-                    <button
-                      onClick={handleSignOut}
-                      className="w-full text-left text-red-300 hover:text-red-200 transition-colors py-2 text-sm font-medium"
-                    >
-                      Sign Out
-                    </button>
-                  </div>
-                ) : (
-                  <Link
-                    href="/login"
-                    className="inline-block bg-secondary text-primary px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-secondary-dark transition-colors"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Sign In
-                  </Link>
+                {user && (
+                  <>
+                    <MobileNavLink href="/orders" label="Orders" onClick={() => setMobileMenuOpen(false)} icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />} />
+                    <MobileNavLink href="/rewards" label="Rewards" onClick={() => setMobileMenuOpen(false)} icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />} />
+                    <MobileNavLink href="/favorites" label="Favorites" onClick={() => setMobileMenuOpen(false)} icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />} />
+                  </>
+                )}
+
+                {isStaff && (
+                  <>
+                    <MobileNavLink href="/staff" label="Order Queue" onClick={() => setMobileMenuOpen(false)} icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />} />
+                    <MobileNavLink href="/admin" label="Admin" onClick={() => setMobileMenuOpen(false)} icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />} />
+                  </>
                 )}
               </div>
-            )}
-          </nav>
+
+              {!loading && (
+                <div className="mt-3 pt-3 border-t border-gray-200">
+                  {user ? (
+                    <div className="space-y-1">
+                      <MobileNavLink href="/profile" label="Edit Profile" onClick={() => setMobileMenuOpen(false)} icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />} />
+                      <button
+                        onClick={handleSignOut}
+                        className="flex items-center gap-3 w-full text-left text-red-600 hover:bg-red-50 rounded-lg transition-colors py-3 px-3 text-base font-medium"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                        Sign Out
+                      </button>
+                    </div>
+                  ) : (
+                    <Link
+                      href="/login"
+                      className="flex items-center justify-center gap-2 w-full bg-primary text-secondary px-5 py-3 rounded-lg text-base font-semibold hover:bg-primary-light transition-colors"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Sign In
+                    </Link>
+                  )}
+                </div>
+              )}
+            </nav>
+          </div>
         )}
       </div>
     </header>
   )
 }
 
-function MobileNavLink({ href, label, onClick }: { href: string; label: string; onClick: () => void }) {
+function MobileNavLink({ href, label, onClick, icon }: { href: string; label: string; onClick: () => void; icon?: React.ReactNode }) {
   return (
     <Link
       href={href}
-      className="block text-secondary/80 hover:text-white transition-colors py-2 text-sm font-medium"
+      className="flex items-center gap-3 text-primary hover:bg-primary/5 rounded-lg transition-colors py-3 px-3 text-base font-medium"
       onClick={onClick}
     >
+      {icon && (
+        <svg className="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          {icon}
+        </svg>
+      )}
       {label}
     </Link>
   )
