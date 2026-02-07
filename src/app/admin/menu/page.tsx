@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { MENU_CATEGORIES, MENU_ITEMS } from '@/lib/menu-data'
 import type { MenuItem } from '@/lib/types/database'
 import { useAuthStore } from '@/stores/auth-store'
+import { uploadMenuImage, deleteMenuImage } from '@/lib/supabase/upload-image'
 
 export default function AdminMenuPage() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
@@ -64,6 +65,10 @@ export default function AdminMenuPage() {
 
   async function deleteItem(id: string) {
     if (!confirm('Are you sure you want to delete this item?')) return
+    const item = menuItems.find(i => i.id === id)
+    if (item?.image_url) {
+      await deleteMenuImage(item.image_url)
+    }
     const { error } = await supabase.from('menu_items').delete().eq('id', id)
     if (!error) {
       setMenuItems(prev => prev.filter(i => i.id !== id))
@@ -122,6 +127,7 @@ export default function AdminMenuPage() {
           <table className="w-full text-sm">
             <thead className="bg-primary/5">
               <tr>
+                <th className="text-left px-4 py-3 font-medium text-primary">Photo</th>
                 <th className="text-left px-4 py-3 font-medium text-primary">Name</th>
                 <th className="text-left px-4 py-3 font-medium text-primary hidden md:table-cell">Category</th>
                 <th className="text-left px-4 py-3 font-medium text-primary">Price</th>
@@ -132,6 +138,22 @@ export default function AdminMenuPage() {
             <tbody className="divide-y divide-secondary-dark/10">
               {menuItems.map(item => (
                 <tr key={item.id} className="hover:bg-primary/5">
+                  <td className="px-4 py-3">
+                    {item.image_url ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        src={item.image_url}
+                        alt={item.name}
+                        className="w-12 h-12 rounded-lg object-cover"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-lg bg-secondary flex items-center justify-center">
+                        <svg className="w-5 h-5 text-accent/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                    )}
+                  </td>
                   <td className="px-4 py-3">
                     <div>
                       <p className="font-medium text-text-dark">{item.name}</p>
@@ -172,7 +194,7 @@ export default function AdminMenuPage() {
               ))}
               {menuItems.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-accent">
+                  <td colSpan={6} className="px-4 py-8 text-center text-accent">
                     No menu items yet. Click &quot;Seed Default Menu&quot; to add the full menu, or add items manually.
                   </td>
                 </tr>
@@ -200,28 +222,95 @@ function MenuItemForm({
   const [category, setCategory] = useState(item?.category || MENU_CATEGORIES[0])
   const [customizable, setCustomizable] = useState(item?.customizable ?? false)
   const [isAvailable, setIsAvailable] = useState(item?.is_available ?? true)
+  const [imageUrl, setImageUrl] = useState(item?.image_url || '')
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(item?.image_url || null)
+  const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const supabase = createClient()
+
+  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setError('Please select an image file (JPG, PNG, WebP)')
+      return
+    }
+
+    // Validate size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image must be under 5MB')
+      return
+    }
+
+    setImageFile(file)
+    setError('')
+
+    // Create preview
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      setImagePreview(ev.target?.result as string)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  function removeImage() {
+    setImageFile(null)
+    setImagePreview(null)
+    setImageUrl('')
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
     setSaving(true)
 
-    const data = {
-      name,
-      description,
-      price: parseFloat(price),
-      category,
-      customizable,
-      is_available: isAvailable,
-    }
-
-    if (isNaN(data.price) || data.price < 0) {
+    const parsedPrice = parseFloat(price)
+    if (isNaN(parsedPrice) || parsedPrice < 0) {
       setError('Please enter a valid price')
       setSaving(false)
       return
+    }
+
+    // Upload image if a new file was selected
+    let finalImageUrl = imageUrl
+    if (imageFile) {
+      setUploading(true)
+      const url = await uploadMenuImage(imageFile, item?.id)
+      setUploading(false)
+      if (!url) {
+        setError('Failed to upload image. Make sure you\'ve run the storage bucket SQL.')
+        setSaving(false)
+        return
+      }
+      // Delete old image if replacing
+      if (item?.image_url) {
+        await deleteMenuImage(item.image_url)
+      }
+      finalImageUrl = url
+    }
+
+    // If image was removed (had one before, now cleared)
+    if (!imagePreview && item?.image_url) {
+      await deleteMenuImage(item.image_url)
+      finalImageUrl = ''
+    }
+
+    const data = {
+      name,
+      description,
+      price: parsedPrice,
+      category,
+      customizable,
+      is_available: isAvailable,
+      image_url: finalImageUrl || null,
     }
 
     let result
@@ -248,6 +337,68 @@ function MenuItemForm({
         {error && (
           <div className="bg-red-50 text-red-700 px-4 py-3 rounded-lg text-sm">{error}</div>
         )}
+
+        {/* Image Upload */}
+        <div>
+          <label className="block text-sm font-medium text-text-dark mb-2">Product Photo</label>
+          <div className="flex items-start gap-4">
+            {/* Preview */}
+            <div className="flex-shrink-0">
+              {imagePreview ? (
+                <div className="relative group">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    className="w-[120px] h-[120px] rounded-xl object-cover border border-secondary-dark/20"
+                  />
+                  <button
+                    type="button"
+                    onClick={removeImage}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs hover:bg-red-600 shadow-sm"
+                  >
+                    &times;
+                  </button>
+                </div>
+              ) : (
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-[120px] h-[120px] rounded-xl border-2 border-dashed border-secondary-dark/30 flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 transition-colors"
+                >
+                  <svg className="w-8 h-8 text-accent/40 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <span className="text-xs text-accent/60">Add photo</span>
+                </div>
+              )}
+            </div>
+
+            {/* Upload controls */}
+            <div className="flex-1">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="bg-secondary text-primary px-4 py-2 rounded-lg text-sm font-medium hover:bg-secondary-dark transition-colors"
+              >
+                {imagePreview ? 'Change Photo' : 'Upload Photo'}
+              </button>
+              <p className="text-xs text-accent mt-2">
+                JPG, PNG, or WebP. Max 5MB. Square images work best.
+              </p>
+              {uploading && (
+                <p className="text-xs text-primary mt-1 font-medium">Uploading...</p>
+              )}
+            </div>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-text-dark mb-1">Name</label>
@@ -322,7 +473,7 @@ function MenuItemForm({
             disabled={saving}
             className="bg-primary text-secondary px-6 py-2 rounded-lg text-sm font-medium hover:bg-primary-light transition-colors disabled:opacity-50"
           >
-            {saving ? 'Saving...' : (item ? 'Update Item' : 'Add Item')}
+            {uploading ? 'Uploading image...' : saving ? 'Saving...' : (item ? 'Update Item' : 'Add Item')}
           </button>
           <button
             type="button"

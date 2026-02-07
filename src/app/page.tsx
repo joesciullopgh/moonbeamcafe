@@ -1,11 +1,42 @@
 'use client'
 
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { createClient } from '@/lib/supabase/client'
 import { useStoreSettings } from '@/stores/store-settings'
+import type { MenuItem } from '@/lib/types/database'
+
+const SIGNATURE_NAMES = [
+  'Moonbeam Signature Latte',
+  'Honey Cinnamon Latte',
+  'Rose Cardamom Latte',
+]
+
+const SIGNATURE_FALLBACKS = [
+  { name: 'Moonbeam Signature Latte', price: 5.75, description: 'Lavender, vanilla, espresso, and oat milk', image_url: null },
+  { name: 'Honey Cinnamon Latte', price: 5.50, description: 'Local honey, cinnamon, espresso, and steamed milk', image_url: null },
+  { name: 'Rose Cardamom Latte', price: 5.75, description: 'Rose water, cardamom, espresso, and steamed milk', image_url: null },
+]
 
 export default function Home() {
   const { settings } = useStoreSettings()
+  const [signatureDrinks, setSignatureDrinks] = useState<Pick<MenuItem, 'name' | 'price' | 'description' | 'image_url'>[]>(SIGNATURE_FALLBACKS)
+  const supabase = useMemo(() => createClient(), [])
+
+  useEffect(() => {
+    async function fetchSignature() {
+      const { data } = await supabase
+        .from('menu_items')
+        .select('name, price, description, image_url')
+        .in('name', SIGNATURE_NAMES)
+        .eq('is_available', true)
+      if (data && data.length > 0) {
+        setSignatureDrinks(data)
+      }
+    }
+    fetchSignature()
+  }, [supabase])
 
   return (
     <div>
@@ -98,21 +129,15 @@ export default function Home() {
             Unique drinks you&apos;ll only find at {settings.store_name}
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <DrinkCard
-              name="Moonbeam Signature Latte"
-              price="$5.75"
-              description="Lavender, vanilla, espresso, and oat milk"
-            />
-            <DrinkCard
-              name="Honey Cinnamon Latte"
-              price="$5.50"
-              description="Local honey, cinnamon, espresso, and steamed milk"
-            />
-            <DrinkCard
-              name="Rose Cardamom Latte"
-              price="$5.75"
-              description="Rose water, cardamom, espresso, and steamed milk"
-            />
+            {signatureDrinks.map((drink) => (
+              <DrinkCard
+                key={drink.name}
+                name={drink.name}
+                price={`$${drink.price.toFixed(2)}`}
+                description={drink.description}
+                imageUrl={drink.image_url}
+              />
+            ))}
           </div>
           <div className="text-center mt-10">
             <Link
@@ -205,14 +230,33 @@ function FeatureCard({ icon, title, description }: { icon: React.ReactNode; titl
   )
 }
 
-function DrinkCard({ name, price, description }: { name: string; price: string; description: string }) {
+function DrinkCard({ name, price, description, imageUrl }: { name: string; price: string; description: string; imageUrl?: string | null }) {
   return (
-    <div className="bg-white rounded-xl p-6 shadow-sm border border-secondary-dark/30 hover:shadow-md transition-shadow">
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="text-lg font-semibold text-primary">{name}</h3>
-        <span className="text-accent font-bold">{price}</span>
+    <div className="bg-white rounded-xl shadow-sm border border-secondary-dark/30 hover:shadow-md transition-shadow overflow-hidden">
+      {imageUrl ? (
+        <div className="relative w-full h-48">
+          <Image
+            src={imageUrl}
+            alt={name}
+            fill
+            className="object-cover"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          />
+        </div>
+      ) : (
+        <div className="w-full h-32 bg-gradient-to-br from-secondary to-secondary-dark/30 flex items-center justify-center">
+          <svg className="w-10 h-10 text-accent/20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+        </div>
+      )}
+      <div className="p-6">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-lg font-semibold text-primary">{name}</h3>
+          <span className="text-accent font-bold">{price}</span>
+        </div>
+        <p className="text-accent text-sm">{description}</p>
       </div>
-      <p className="text-accent text-sm">{description}</p>
     </div>
   )
 }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { MENU_ITEMS, MENU_CATEGORIES, type MenuItemData } from '@/lib/menu-data'
 import type { MenuItem } from '@/lib/types/database'
@@ -141,6 +142,7 @@ function MenuCard({
   const addItem = useCartStore(s => s.addItem)
   const isCustomizable = 'customizable' in item ? item.customizable : false
   const isMenuItem = !usingFallback && 'id' in item
+  const imageUrl = 'image_url' in item ? item.image_url : null
 
   function handleAddToCart() {
     if (!isMenuItem) return
@@ -155,30 +157,52 @@ function MenuCard({
   }
 
   return (
-    <div className="bg-white rounded-xl border border-secondary-dark/20 p-5 hover:shadow-md transition-shadow">
-      <div className="flex justify-between items-start gap-3">
-        <div className="flex-1">
-          <h3 className="font-semibold text-primary text-lg">{item.name}</h3>
-          <p className="text-accent text-sm mt-1">{item.description}</p>
-          {isCustomizable && (
-            <span className="inline-block mt-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-              Customizable
-            </span>
-          )}
+    <div className="bg-white rounded-xl border border-secondary-dark/20 overflow-hidden hover:shadow-md transition-shadow">
+      {/* Product Image */}
+      {imageUrl ? (
+        <div className="relative w-full h-48">
+          <Image
+            src={imageUrl}
+            alt={item.name}
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          />
         </div>
-        <div className="text-right flex-shrink-0 flex flex-col items-end gap-2">
-          <div className="flex items-center gap-1">
-            <span className="text-lg font-bold text-accent">${item.price.toFixed(2)}</span>
-            {isMenuItem && <FavoriteButton menuItemId={(item as MenuItem).id} />}
+      ) : (
+        <div className="w-full h-32 bg-gradient-to-br from-secondary to-secondary-dark/30 flex items-center justify-center">
+          <svg className="w-10 h-10 text-accent/20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+        </div>
+      )}
+
+      {/* Card Content */}
+      <div className="p-5">
+        <div className="flex justify-between items-start gap-3">
+          <div className="flex-1">
+            <h3 className="font-semibold text-primary text-lg">{item.name}</h3>
+            <p className="text-accent text-sm mt-1">{item.description}</p>
+            {isCustomizable && (
+              <span className="inline-block mt-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                Customizable
+              </span>
+            )}
           </div>
-          {isMenuItem && (
-            <button
-              onClick={handleAddToCart}
-              className="bg-primary text-secondary px-3 py-1.5 rounded-full text-xs font-medium hover:bg-primary-light transition-colors"
-            >
-              {isCustomizable ? 'Customize' : 'Add'}
-            </button>
-          )}
+          <div className="text-right flex-shrink-0 flex flex-col items-end gap-2">
+            <div className="flex items-center gap-1">
+              <span className="text-lg font-bold text-accent">${item.price.toFixed(2)}</span>
+              {isMenuItem && <FavoriteButton menuItemId={(item as MenuItem).id} />}
+            </div>
+            {isMenuItem && (
+              <button
+                onClick={handleAddToCart}
+                className="bg-primary text-secondary px-3 py-1.5 rounded-full text-xs font-medium hover:bg-primary-light transition-colors"
+              >
+                {isCustomizable ? 'Customize' : 'Add'}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
