@@ -6,10 +6,12 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useAuthStore } from '@/stores/auth-store'
+import { useCartStore } from '@/stores/cart-store'
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { user, profile, loading } = useAuthStore()
+  const cartItemCount = useCartStore(s => s.getItemCount())
   const router = useRouter()
   const supabase = createClient()
 
@@ -93,10 +95,16 @@ export default function Header() {
               </>
             )}
             <Link
-              href="/menu"
-              className="bg-secondary text-primary px-4 py-2 rounded-full text-sm font-semibold hover:bg-secondary-dark transition-colors"
+              href={cartItemCount > 0 ? '/cart' : '/menu'}
+              className="bg-secondary text-primary px-4 py-2 rounded-full text-sm font-semibold hover:bg-secondary-dark transition-colors relative"
             >
-              Order Now
+              {cartItemCount > 0 ? (
+                <>
+                  Cart ({cartItemCount})
+                </>
+              ) : (
+                'Order Now'
+              )}
             </Link>
           </nav>
 
