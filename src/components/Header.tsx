@@ -49,9 +49,17 @@ export default function Header() {
               Menu
             </Link>
             {user && (
-              <Link href="/orders" className="text-secondary hover:text-white transition-colors text-sm font-medium">
-                Orders
-              </Link>
+              <>
+                <Link href="/orders" className="text-secondary hover:text-white transition-colors text-sm font-medium">
+                  Orders
+                </Link>
+                <Link href="/favorites" className="text-secondary hover:text-white transition-colors text-sm font-medium">
+                  Favorites
+                </Link>
+                <Link href="/rewards" className="text-secondary hover:text-white transition-colors text-sm font-medium">
+                  Rewards
+                </Link>
+              </>
             )}
             {isStaff && (
               <Link href="/admin" className="text-secondary hover:text-white transition-colors text-sm font-medium">
@@ -118,9 +126,17 @@ export default function Header() {
               Menu
             </Link>
             {user && (
-              <Link href="/orders" className="block text-secondary hover:text-white transition-colors py-2 text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>
-                Orders
-              </Link>
+              <>
+                <Link href="/orders" className="block text-secondary hover:text-white transition-colors py-2 text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>
+                  Orders
+                </Link>
+                <Link href="/favorites" className="block text-secondary hover:text-white transition-colors py-2 text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>
+                  Favorites
+                </Link>
+                <Link href="/rewards" className="block text-secondary hover:text-white transition-colors py-2 text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>
+                  Rewards
+                </Link>
+              </>
             )}
             {isStaff && (
               <Link href="/admin" className="block text-secondary hover:text-white transition-colors py-2 text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>

@@ -7,6 +7,7 @@ import { MENU_ITEMS, MENU_CATEGORIES, type MenuItemData } from '@/lib/menu-data'
 import type { MenuItem } from '@/lib/types/database'
 import { useCartStore, type CartCustomization } from '@/stores/cart-store'
 import CustomizationModal from '@/components/CustomizationModal'
+import FavoriteButton from '@/components/FavoriteButton'
 
 export default function MenuPage() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
@@ -166,7 +167,10 @@ function MenuCard({
           )}
         </div>
         <div className="text-right flex-shrink-0 flex flex-col items-end gap-2">
-          <span className="text-lg font-bold text-accent">${item.price.toFixed(2)}</span>
+          <div className="flex items-center gap-1">
+            <span className="text-lg font-bold text-accent">${item.price.toFixed(2)}</span>
+            {isMenuItem && <FavoriteButton menuItemId={(item as MenuItem).id} />}
+          </div>
           {isMenuItem && (
             <button
               onClick={handleAddToCart}
