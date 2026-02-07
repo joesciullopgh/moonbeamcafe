@@ -49,11 +49,15 @@ export default function Header() {
   return (
     <header className="bg-primary sticky top-0 z-50 shadow-md">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Top bar: greeting + account */}
-        {!loading && user && profile && (
+        {/* Top bar: greeting */}
+        {!loading && (
           <div className="flex items-center justify-between pt-2 pb-1 text-xs text-secondary/60">
-            <span>{getGreeting()}, {displayName}</span>
-            <span>{profile.stars} stars</span>
+            <span>
+              {user && profile
+                ? `${getGreeting()}, ${displayName}`
+                : `${getGreeting()}, welcome to Moonbeam`}
+            </span>
+            {user && profile && <span>{profile.stars} stars</span>}
           </div>
         )}
 
