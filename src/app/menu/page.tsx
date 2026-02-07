@@ -1,15 +1,21 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { MENU_ITEMS, MENU_CATEGORIES, type MenuItemData } from '@/lib/menu-data'
 import type { MenuItem } from '@/lib/types/database'
+import { useCartStore, type CartCustomization } from '@/stores/cart-store'
+import CustomizationModal from '@/components/CustomizationModal'
 
 export default function MenuPage() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
   const [loading, setLoading] = useState(true)
   const [activeCategory, setActiveCategory] = useState<string>(MENU_CATEGORIES[0])
   const [usingFallback, setUsingFallback] = useState(false)
+  const [customizingItem, setCustomizingItem] = useState<MenuItem | null>(null)
+  const cartItemCount = useCartStore(s => s.getItemCount())
+  const cartTotal = useCartStore(s => s.getTotal())
   const supabase = createClient()
 
   useEffect(() => {
@@ -22,7 +28,6 @@ export default function MenuPage() {
         .order('name')
 
       if (error || !data || data.length === 0) {
-        // Use fallback static menu data
         setUsingFallback(true)
       } else {
         setMenuItems(data)
@@ -80,7 +85,12 @@ export default function MenuPage() {
         {/* Menu Items Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {displayItems.map((item) => (
-            <MenuCard key={item.name} item={item} />
+            <MenuCard
+              key={item.name}
+              item={item}
+              onCustomize={usingFallback ? undefined : (menuItem) => setCustomizingItem(menuItem)}
+              usingFallback={usingFallback}
+            />
           ))}
         </div>
 
@@ -90,12 +100,58 @@ export default function MenuPage() {
           </div>
         )}
       </div>
+
+      {/* Floating Cart Button */}
+      {cartItemCount > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40">
+          <Link
+            href="/cart"
+            className="flex items-center gap-3 bg-primary text-secondary px-6 py-3 rounded-full shadow-lg hover:bg-primary-light transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" />
+            </svg>
+            <span className="font-semibold">{cartItemCount} items</span>
+            <span className="font-bold">${cartTotal.toFixed(2)}</span>
+          </Link>
+        </div>
+      )}
+
+      {/* Customization Modal */}
+      {customizingItem && (
+        <CustomizationModal
+          item={customizingItem}
+          onClose={() => setCustomizingItem(null)}
+        />
+      )}
     </div>
   )
 }
 
-function MenuCard({ item }: { item: MenuItem | MenuItemData }) {
+function MenuCard({
+  item,
+  onCustomize,
+  usingFallback,
+}: {
+  item: MenuItem | MenuItemData
+  onCustomize?: (item: MenuItem) => void
+  usingFallback: boolean
+}) {
+  const addItem = useCartStore(s => s.addItem)
   const isCustomizable = 'customizable' in item ? item.customizable : false
+  const isMenuItem = !usingFallback && 'id' in item
+
+  function handleAddToCart() {
+    if (!isMenuItem) return
+    const menuItem = item as MenuItem
+
+    if (isCustomizable && onCustomize) {
+      onCustomize(menuItem)
+    } else {
+      const defaultCustomizations: CartCustomization[] = []
+      addItem(menuItem, defaultCustomizations, '')
+    }
+  }
 
   return (
     <div className="bg-white rounded-xl border border-secondary-dark/20 p-5 hover:shadow-md transition-shadow">
@@ -109,8 +165,16 @@ function MenuCard({ item }: { item: MenuItem | MenuItemData }) {
             </span>
           )}
         </div>
-        <div className="text-right flex-shrink-0">
+        <div className="text-right flex-shrink-0 flex flex-col items-end gap-2">
           <span className="text-lg font-bold text-accent">${item.price.toFixed(2)}</span>
+          {isMenuItem && (
+            <button
+              onClick={handleAddToCart}
+              className="bg-primary text-secondary px-3 py-1.5 rounded-full text-xs font-medium hover:bg-primary-light transition-colors"
+            >
+              {isCustomizable ? 'Customize' : 'Add'}
+            </button>
+          )}
         </div>
       </div>
     </div>
