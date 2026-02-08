@@ -1,12 +1,18 @@
 'use client'
 
 import { useEffect, useMemo } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useAuthStore } from '@/stores/auth-store'
 
+// Pages that should NOT trigger the force-password-change redirect
+const EXEMPT_PATHS = ['/change-password', '/login', '/signup', '/forgot-password', '/reset-password', '/auth/callback']
+
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { setUser, setProfile, setLoading } = useAuthStore()
+  const { setUser, setProfile, setLoading, requiresPasswordChange } = useAuthStore()
   const supabase = useMemo(() => createClient(), [])
+  const pathname = usePathname()
+  const router = useRouter()
 
   useEffect(() => {
     async function getInitialSession() {
@@ -51,6 +57,13 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       subscription.unsubscribe()
     }
   }, [supabase, setUser, setProfile, setLoading])
+
+  // Force password change redirect
+  useEffect(() => {
+    if (requiresPasswordChange() && !EXEMPT_PATHS.includes(pathname)) {
+      router.push('/change-password')
+    }
+  }, [pathname, requiresPasswordChange, router])
 
   return <>{children}</>
 }

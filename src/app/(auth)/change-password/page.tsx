@@ -1,13 +1,16 @@
 'use client'
 
-import { useState } from 'react'
-import Link from 'next/link'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { useAuthStore } from '@/stores/auth-store'
 import { validatePassword, isPasswordStrong, PASSWORD_POLICY_TEXT } from '@/lib/password-validation'
 
-export default function ResetPasswordPage() {
-  const [password, setPassword] = useState('')
+export default function ChangePasswordPage() {
+  const { user, profile, setProfile } = useAuthStore()
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -15,50 +18,84 @@ export default function ResetPasswordPage() {
   const router = useRouter()
   const supabase = createClient()
 
-  const checks = validatePassword(password)
+  const isForced = profile?.force_password_reset
+  const checks = validatePassword(newPassword)
 
-  async function handleReset(e: React.FormEvent) {
+  // Password expiry check — 90 days
+  const isExpired = profile?.password_changed_at
+    ? Date.now() - new Date(profile.password_changed_at).getTime() > 90 * 24 * 60 * 60 * 1000
+    : false
+
+  useEffect(() => {
+    if (!user) {
+      router.push('/login')
+    }
+  }, [user, router])
+
+  async function handleChangePassword(e: React.FormEvent) {
     e.preventDefault()
     setError('')
 
-    if (password !== confirmPassword) {
-      setError('Passwords do not match')
+    if (newPassword !== confirmPassword) {
+      setError('New passwords do not match.')
       return
     }
 
-    if (!isPasswordStrong(password)) {
+    if (!isPasswordStrong(newPassword)) {
       setError(PASSWORD_POLICY_TEXT)
       return
     }
 
     setLoading(true)
 
-    const { error: updateError } = await supabase.auth.updateUser({
-      password,
+    // Verify current password by re-authenticating
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: user!.email!,
+      password: currentPassword,
     })
 
-    if (updateError) {
-      setError(updateError.message)
+    if (signInError) {
+      setError('Current password is incorrect.')
       setLoading(false)
       return
     }
 
-    // Update password_changed_at and clear any force reset flag
-    const { data: { user } } = await supabase.auth.getUser()
-    if (user) {
-      await supabase
-        .from('profiles')
-        .update({
-          password_changed_at: new Date().toISOString(),
-          force_password_reset: false,
-          failed_login_attempts: 0,
-          locked_until: null,
-        })
-        .eq('id', user.id)
+    // Update to new password
+    const { error: updateError } = await supabase.auth.updateUser({
+      password: newPassword,
+    })
+
+    if (updateError) {
+      setError('Failed to update password: ' + updateError.message)
+      setLoading(false)
+      return
+    }
+
+    // Update profile: clear force_password_reset, set password_changed_at
+    const { data: updatedProfile } = await supabase
+      .from('profiles')
+      .update({
+        force_password_reset: false,
+        password_changed_at: new Date().toISOString(),
+      })
+      .eq('id', user!.id)
+      .select()
+      .single()
+
+    if (updatedProfile) {
+      setProfile(updatedProfile)
     }
 
     setSuccess(true)
     setLoading(false)
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-[80vh] flex items-center justify-center">
+        <div className="text-accent">Loading...</div>
+      </div>
+    )
   }
 
   if (success) {
@@ -72,12 +109,12 @@ export default function ResetPasswordPage() {
               </svg>
             </div>
             <h2 className="text-2xl font-bold text-primary mb-2">Password Updated</h2>
-            <p className="text-accent mb-6">Your password has been reset successfully. You can now sign in with your new password.</p>
+            <p className="text-accent mb-6">Your password has been changed successfully.</p>
             <Link
-              href="/login"
+              href="/profile"
               className="inline-block bg-primary text-secondary px-6 py-3 rounded-lg font-semibold hover:bg-primary-light transition-colors"
             >
-              Sign In
+              Back to Profile
             </Link>
           </div>
         </div>
@@ -89,31 +126,58 @@ export default function ResetPasswordPage() {
     <div className="min-h-[80vh] flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-primary">New Password</h1>
-          <p className="text-accent mt-2">Choose a new password for your account</p>
+          <h1 className="text-3xl font-bold text-primary">Change Password</h1>
+          {isForced ? (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm mt-4">
+              <p className="font-bold">Password change required</p>
+              <p className="mt-1">An administrator has required you to change your password before continuing.</p>
+            </div>
+          ) : isExpired ? (
+            <div className="bg-amber-50 border border-amber-200 text-amber-700 px-4 py-3 rounded-lg text-sm mt-4">
+              <p className="font-bold">Password expired</p>
+              <p className="mt-1">Your password is older than 90 days. Please set a new password for security.</p>
+            </div>
+          ) : (
+            <p className="text-accent mt-2">Enter your current password and choose a new one</p>
+          )}
         </div>
 
-        <form onSubmit={handleReset} className="bg-white rounded-xl shadow-sm border border-secondary-dark/20 p-8 space-y-5">
+        <form onSubmit={handleChangePassword} className="bg-white rounded-xl shadow-sm border border-secondary-dark/20 p-8 space-y-5">
           {error && (
             <div className="bg-red-50 text-red-700 px-4 py-3 rounded-lg text-sm">{error}</div>
           )}
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-text-dark mb-1">
+            <label htmlFor="currentPassword" className="block text-sm font-medium text-text-dark mb-1">
+              Current Password
+            </label>
+            <input
+              id="currentPassword"
+              type="password"
+              required
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors"
+              placeholder="Your current password"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="newPassword" className="block text-sm font-medium text-text-dark mb-1">
               New Password
             </label>
             <input
-              id="password"
+              id="newPassword"
               type="password"
               required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
               className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors"
               placeholder="Choose a strong password"
             />
 
             {/* Password strength indicator */}
-            {password.length > 0 && (
+            {newPassword.length > 0 && (
               <div className="mt-3 space-y-1.5">
                 {checks.map((check, i) => (
                   <div key={i} className="flex items-center gap-2 text-xs">
@@ -144,20 +208,28 @@ export default function ResetPasswordPage() {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors"
-              placeholder="Re-enter your password"
+              placeholder="Re-enter your new password"
             />
-            {confirmPassword.length > 0 && password !== confirmPassword && (
+            {confirmPassword.length > 0 && newPassword !== confirmPassword && (
               <p className="text-xs text-red-500 mt-1">Passwords do not match</p>
             )}
           </div>
 
           <button
             type="submit"
-            disabled={loading || !isPasswordStrong(password) || password !== confirmPassword}
+            disabled={loading || !isPasswordStrong(newPassword) || newPassword !== confirmPassword}
             className="w-full bg-primary text-secondary py-3 rounded-lg font-semibold hover:bg-primary-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Updating...' : 'Update Password'}
           </button>
+
+          {!isForced && !isExpired && (
+            <p className="text-center text-sm text-accent">
+              <Link href="/profile" className="text-primary font-medium hover:underline">
+                Back to Profile
+              </Link>
+            </p>
+          )}
         </form>
       </div>
     </div>

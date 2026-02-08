@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { validatePassword, isPasswordStrong, PASSWORD_POLICY_TEXT } from '@/lib/password-validation'
 
 export default function SignupPage() {
   const [firstName, setFirstName] = useState('')
@@ -17,6 +18,8 @@ export default function SignupPage() {
   const router = useRouter()
   const supabase = createClient()
 
+  const checks = validatePassword(password)
+
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault()
     setError('')
@@ -26,8 +29,8 @@ export default function SignupPage() {
       return
     }
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters')
+    if (!isPasswordStrong(password)) {
+      setError(PASSWORD_POLICY_TEXT)
       return
     }
 
@@ -150,8 +153,28 @@ export default function SignupPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors"
-              placeholder="At least 6 characters"
+              placeholder="Choose a strong password"
             />
+
+            {/* Password strength indicator */}
+            {password.length > 0 && (
+              <div className="mt-3 space-y-1.5">
+                {checks.map((check, i) => (
+                  <div key={i} className="flex items-center gap-2 text-xs">
+                    {check.met ? (
+                      <svg className="w-3.5 h-3.5 text-green-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    ) : (
+                      <svg className="w-3.5 h-3.5 text-gray-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="9" strokeWidth={2} />
+                      </svg>
+                    )}
+                    <span className={check.met ? 'text-green-700' : 'text-gray-500'}>{check.label}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div>
@@ -167,11 +190,14 @@ export default function SignupPage() {
               className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors"
               placeholder="Re-enter your password"
             />
+            {confirmPassword.length > 0 && password !== confirmPassword && (
+              <p className="text-xs text-red-500 mt-1">Passwords do not match</p>
+            )}
           </div>
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !isPasswordStrong(password) || password !== confirmPassword}
             className="w-full bg-primary text-secondary py-3 rounded-lg font-semibold hover:bg-primary-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Creating account...' : 'Create Account'}

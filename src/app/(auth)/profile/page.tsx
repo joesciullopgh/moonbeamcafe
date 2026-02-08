@@ -282,6 +282,28 @@ export default function ProfilePage() {
               Terms accepted on {new Date(profile.accepted_terms_at).toLocaleDateString()}
             </p>
           )}
+
+          {/* Password & Security */}
+          <div className="pt-4 border-t border-gray-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-text-dark">Password</p>
+                {profile.password_changed_at ? (
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    Last changed {new Date(profile.password_changed_at).toLocaleDateString()}
+                  </p>
+                ) : (
+                  <p className="text-xs text-gray-400 mt-0.5">Never changed</p>
+                )}
+              </div>
+              <Link
+                href="/change-password"
+                className="px-4 py-2 text-sm font-medium text-primary border border-primary rounded-lg hover:bg-primary hover:text-secondary transition-colors"
+              >
+                Change Password
+              </Link>
+            </div>
+          </div>
         </div>
 
         <button

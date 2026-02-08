@@ -17,6 +17,10 @@ export interface Profile {
   is_active: boolean
   stars: number
   accepted_terms_at: string | null
+  failed_login_attempts: number
+  locked_until: string | null
+  password_changed_at: string | null
+  force_password_reset: boolean
   created_at: string
 }
 
