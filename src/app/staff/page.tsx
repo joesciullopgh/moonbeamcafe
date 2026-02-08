@@ -15,59 +15,68 @@ const STATUS_CONFIG: Record<OrderStatus, {
   border: string
   headerBg: string
   headerText: string
+  accent: string
 }> = {
   pending: {
     label: 'NEW',
     bg: 'bg-white',
-    border: 'border-amber-400',
-    headerBg: 'bg-amber-500',
-    headerText: 'text-white',
+    border: 'border-primary/30',
+    headerBg: 'bg-primary',
+    headerText: 'text-secondary',
+    accent: 'text-primary',
   },
   confirmed: {
     label: 'NEW',
     bg: 'bg-white',
-    border: 'border-amber-400',
-    headerBg: 'bg-amber-500',
-    headerText: 'text-white',
+    border: 'border-primary/30',
+    headerBg: 'bg-primary',
+    headerText: 'text-secondary',
+    accent: 'text-primary',
   },
   preparing: {
     label: 'MAKING',
     bg: 'bg-white',
-    border: 'border-purple-500',
-    headerBg: 'bg-purple-600',
-    headerText: 'text-white',
+    border: 'border-primary-light/40',
+    headerBg: 'bg-primary-light',
+    headerText: 'text-secondary',
+    accent: 'text-primary-light',
   },
   ready: {
     label: 'READY',
     bg: 'bg-white',
-    border: 'border-green-500',
+    border: 'border-green-500/40',
     headerBg: 'bg-green-600',
     headerText: 'text-white',
+    accent: 'text-green-600',
   },
   completed: {
     label: 'DONE',
     bg: 'bg-gray-50',
-    border: 'border-gray-300',
+    border: 'border-gray-200',
     headerBg: 'bg-gray-400',
     headerText: 'text-white',
+    accent: 'text-gray-400',
   },
   cancelled: {
     label: 'CANCELLED',
     bg: 'bg-gray-50',
-    border: 'border-red-300',
-    headerBg: 'bg-red-500',
+    border: 'border-gray-200',
+    headerBg: 'bg-gray-400',
     headerText: 'text-white',
+    accent: 'text-gray-400',
   },
 }
 
-// Maps status → the previous status for "undo" / move-back
 const PREV_STATUS: Partial<Record<OrderStatus, OrderStatus>> = {
   preparing: 'pending',
   ready: 'preparing',
 }
 
+type ProfileMap = Record<string, { first_name: string | null; last_name: string | null; email: string }>
+
 export default function StaffDashboardPage() {
   const [orders, setOrders] = useState<Order[]>([])
+  const [profiles, setProfiles] = useState<ProfileMap>({})
   const [loading, setLoading] = useState(true)
   const [showCompleted, setShowCompleted] = useState(false)
   const [updatingIds, setUpdatingIds] = useState<Set<string>>(new Set())
@@ -75,7 +84,6 @@ export default function StaffDashboardPage() {
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
 
-  // Track when each order entered "ready" status (orderId → timestamp ms)
   const readyTimestamps = useRef<Map<string, number>>(new Map())
 
   // Auth gate
@@ -89,20 +97,28 @@ export default function StaffDashboardPage() {
     }
   }, [user, profile, authLoading, router])
 
-  // Fetch orders + realtime subscription
+  // Fetch orders + profiles + realtime subscription
   useEffect(() => {
     if (!user || !profile) return
 
-    async function fetchOrders() {
-      const { data } = await supabase
-        .from('orders')
-        .select('*')
-        .order('created_at', { ascending: true })
-      const fetched = (data as Order[]) || []
+    async function fetchData() {
+      const [ordersRes, profilesRes] = await Promise.all([
+        supabase.from('orders').select('*').order('created_at', { ascending: true }),
+        supabase.from('profiles').select('id, first_name, last_name, email'),
+      ])
+
+      const fetched = (ordersRes.data as Order[]) || []
       setOrders(fetched)
+
+      // Build a lookup map: user_id → { first_name, last_name, email }
+      const pMap: ProfileMap = {}
+      for (const p of profilesRes.data || []) {
+        pMap[p.id] = p
+      }
+      setProfiles(pMap)
+
       setLoading(false)
 
-      // Seed ready timestamps for orders already in "ready" state
       const now = Date.now()
       for (const o of fetched) {
         if (o.status === 'ready' && !readyTimestamps.current.has(o.id)) {
@@ -110,7 +126,7 @@ export default function StaffDashboardPage() {
         }
       }
     }
-    fetchOrders()
+    fetchData()
 
     const channel = supabase
       .channel('staff-orders-realtime')
@@ -131,11 +147,9 @@ export default function StaffDashboardPage() {
         (payload) => {
           const o = payload.new as Order
           setOrders(prev => prev.map(old => old.id === o.id ? o : old))
-          // Track transition into "ready"
           if (o.status === 'ready' && !readyTimestamps.current.has(o.id)) {
             readyTimestamps.current.set(o.id, Date.now())
           }
-          // Clear timestamp if moved out of ready
           if (o.status !== 'ready') {
             readyTimestamps.current.delete(o.id)
           }
@@ -157,7 +171,7 @@ export default function StaffDashboardPage() {
     }
   }, [user, profile, supabase])
 
-  // Tick every 15s for time display + auto-complete check
+  // Tick every 15s
   const [, setTick] = useState(0)
   useEffect(() => {
     const interval = setInterval(() => setTick(t => t + 1), 15000)
@@ -198,7 +212,18 @@ export default function StaffDashboardPage() {
         }
       }
     }
-  }) // runs on every render/tick
+  })
+
+  // Resolve display name: order.customer_name → profile lookup → "Guest"
+  const getCustomerName = useCallback((order: Order) => {
+    if (order.customer_name) return order.customer_name
+    const p = profiles[order.user_id]
+    if (p) {
+      const name = [p.first_name, p.last_name].filter(Boolean).join(' ')
+      return name || p.email
+    }
+    return 'Guest'
+  }, [profiles])
 
   if (authLoading || loading) {
     return (
@@ -216,7 +241,7 @@ export default function StaffDashboardPage() {
   const readyOrders = activeOrders.filter(o => o.status === 'ready')
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-secondary">
       {/* Top bar */}
       <div className="bg-primary text-secondary px-4 sm:px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -240,30 +265,30 @@ export default function StaffDashboardPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-        {/* Status summary bar — 3 columns */}
+        {/* Status summary */}
         <div className="grid grid-cols-3 gap-3 mb-6">
-          <div className="rounded-xl border-2 border-amber-400 bg-amber-50 px-4 py-3 text-center">
-            <p className="text-3xl font-black text-amber-700">{newOrders.length}</p>
-            <p className="text-xs font-bold text-amber-600 uppercase tracking-wider">New</p>
+          <div className="rounded-xl border-2 border-primary/20 bg-primary/5 px-4 py-3 text-center">
+            <p className="text-3xl font-black text-primary">{newOrders.length}</p>
+            <p className="text-xs font-bold text-primary/70 uppercase tracking-wider">New</p>
           </div>
-          <div className="rounded-xl border-2 border-purple-500 bg-purple-50 px-4 py-3 text-center">
-            <p className="text-3xl font-black text-purple-700">{makingOrders.length}</p>
-            <p className="text-xs font-bold text-purple-600 uppercase tracking-wider">Making</p>
+          <div className="rounded-xl border-2 border-primary-light/30 bg-primary-light/5 px-4 py-3 text-center">
+            <p className="text-3xl font-black text-primary-light">{makingOrders.length}</p>
+            <p className="text-xs font-bold text-primary-light/70 uppercase tracking-wider">Making</p>
           </div>
-          <div className="rounded-xl border-2 border-green-500 bg-green-50 px-4 py-3 text-center">
+          <div className="rounded-xl border-2 border-green-500/30 bg-green-50 px-4 py-3 text-center">
             <p className="text-3xl font-black text-green-700">{readyOrders.length}</p>
             <p className="text-xs font-bold text-green-600 uppercase tracking-wider">Ready</p>
           </div>
         </div>
 
-        {/* Active Orders — card grid */}
+        {/* Active Orders */}
         {activeOrders.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-2xl border border-gray-200">
-            <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="text-center py-20 bg-white rounded-2xl border border-secondary-dark/20">
+            <svg className="w-16 h-16 text-primary/20 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
             </svg>
-            <p className="text-gray-500 text-lg">No active orders</p>
-            <p className="text-gray-400 text-sm mt-1">New orders will appear here in real time</p>
+            <p className="text-accent text-lg">No active orders</p>
+            <p className="text-accent/60 text-sm mt-1">New orders will appear here in real time</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -278,6 +303,7 @@ export default function StaffDashboardPage() {
                 <OrderCard
                   key={order.id}
                   order={order}
+                  customerName={getCustomerName(order)}
                   onUpdateStatus={updateStatus}
                   isUpdating={updatingIds.has(order.id)}
                   readySince={readyTimestamps.current.get(order.id)}
@@ -291,7 +317,7 @@ export default function StaffDashboardPage() {
           <div className="mt-8">
             <button
               onClick={() => setShowCompleted(!showCompleted)}
-              className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 font-medium transition-colors"
+              className="flex items-center gap-2 text-sm text-accent hover:text-primary font-medium transition-colors"
             >
               <svg className={`w-4 h-4 transition-transform ${showCompleted ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -308,6 +334,7 @@ export default function StaffDashboardPage() {
                     <OrderCard
                       key={order.id}
                       order={order}
+                      customerName={getCustomerName(order)}
                       onUpdateStatus={updateStatus}
                       isUpdating={updatingIds.has(order.id)}
                     />
@@ -323,11 +350,13 @@ export default function StaffDashboardPage() {
 
 function OrderCard({
   order,
+  customerName,
   onUpdateStatus,
   isUpdating,
   readySince,
 }: {
   order: Order
+  customerName: string
   onUpdateStatus: (id: string, status: OrderStatus) => void
   isUpdating: boolean
   readySince?: number
@@ -340,10 +369,7 @@ function OrderCard({
   const isReady = order.status === 'ready'
   const isDone = order.status === 'completed' || order.status === 'cancelled'
   const isUrgent = isNew && getMinutesSince(order.created_at) >= 5
-  const customerName = order.customer_name || 'Guest'
-  const prevStatus = PREV_STATUS[order.status]
 
-  // Countdown for ready orders
   let readyMinLeft = 0
   if (isReady && readySince) {
     const elapsed = Math.floor((Date.now() - readySince) / 60000)
@@ -351,42 +377,42 @@ function OrderCard({
   }
 
   return (
-    <div className={`rounded-2xl border-2 ${config.border} ${config.bg} overflow-hidden transition-all shadow-sm ${isUpdating ? 'opacity-60 scale-[0.98]' : ''} ${isUrgent ? 'ring-2 ring-red-400 ring-offset-2' : ''}`}>
-      {/* Colored header band with status + customer name */}
+    <div className={`rounded-2xl border-2 ${config.border} ${config.bg} overflow-hidden transition-all shadow-sm hover:shadow-md ${isUpdating ? 'opacity-60 scale-[0.98]' : ''} ${isUrgent ? 'ring-2 ring-red-400 ring-offset-2' : ''}`}>
+      {/* Header */}
       <div className={`${config.headerBg} ${config.headerText} px-4 py-3`}>
         <div className="flex items-center justify-between">
-          <span className="text-xs font-black uppercase tracking-widest opacity-90">{config.label}</span>
-          <span className="text-xs font-mono opacity-70">#{order.id.slice(0, 8)}</span>
+          <span className="text-xs font-black uppercase tracking-widest opacity-80">{config.label}</span>
+          <span className="text-xs font-mono opacity-60">#{order.id.slice(0, 8)}</span>
         </div>
         <p className="text-lg font-black mt-1 leading-tight truncate">{customerName}</p>
       </div>
 
-      {/* Time — prominent */}
-      <div className={`px-4 py-2.5 flex items-center gap-2 border-b ${isUrgent ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-100'}`}>
-        <svg className={`w-4 h-4 shrink-0 ${isUrgent ? 'text-red-500' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      {/* Time */}
+      <div className={`px-4 py-2.5 flex items-center gap-2 border-b ${isUrgent ? 'bg-red-50 border-red-200' : 'bg-secondary border-secondary-dark/10'}`}>
+        <svg className={`w-4 h-4 shrink-0 ${isUrgent ? 'text-red-500' : 'text-accent/50'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
-        <span className={`text-sm font-bold ${isUrgent ? 'text-red-600' : 'text-gray-700'}`}>{timeSince}</span>
+        <span className={`text-sm font-bold ${isUrgent ? 'text-red-600' : 'text-text-dark'}`}>{timeSince}</span>
         {isUrgent && <span className="text-xs font-bold text-red-500 bg-red-100 px-2 py-0.5 rounded-full ml-auto">URGENT</span>}
       </div>
 
-      {/* Items list */}
+      {/* Items */}
       <div className="px-4 py-3">
         <div className="space-y-2">
           {items.map((item, i) => (
             <div key={i} className="flex items-start gap-2.5">
-              <span className="bg-gray-900 text-white text-xs font-black w-6 h-6 rounded-md flex items-center justify-center shrink-0 mt-0.5">
+              <span className="bg-primary text-secondary text-xs font-black w-6 h-6 rounded-md flex items-center justify-center shrink-0 mt-0.5">
                 {item.quantity || 1}
               </span>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-gray-900 leading-tight">{item.menu_item_name}</p>
+                <p className="text-sm font-bold text-text-dark leading-tight">{item.menu_item_name}</p>
                 {Array.isArray(item.customizations) && item.customizations.length > 0 && (
-                  <p className="text-xs text-gray-600 leading-tight mt-0.5 font-medium">
+                  <p className="text-xs text-accent leading-tight mt-0.5 font-medium">
                     {item.customizations.map(c => c.name).join(' · ')}
                   </p>
                 )}
                 {item.special_instructions && (
-                  <div className="text-xs font-bold text-amber-800 bg-amber-100 rounded-md px-2 py-1 mt-1 leading-tight">
+                  <div className="text-xs font-bold text-primary bg-primary/10 rounded-md px-2 py-1 mt-1 leading-tight">
                     NOTE: {item.special_instructions}
                   </div>
                 )}
@@ -397,51 +423,47 @@ function OrderCard({
       </div>
 
       {/* Total */}
-      <div className="px-4 py-2 border-t border-gray-200 flex items-center justify-between bg-gray-50">
-        <span className="text-sm font-semibold text-gray-600">
+      <div className="px-4 py-2 border-t border-secondary-dark/10 flex items-center justify-between bg-secondary/50">
+        <span className="text-sm font-semibold text-accent">
           {items.reduce((sum, it) => sum + (it.quantity || 1), 0)} item{items.reduce((sum, it) => sum + (it.quantity || 1), 0) !== 1 ? 's' : ''}
         </span>
-        <span className="font-black text-gray-900">${order.total.toFixed(2)}</span>
+        <span className="font-black text-text-dark">${order.total.toFixed(2)}</span>
       </div>
 
-      {/* Action buttons */}
+      {/* Actions */}
       <div className="px-4 pb-4 pt-3 space-y-2">
-        {/* New orders → Start Making */}
         {isNew && (
-          <>
-            <div className="flex gap-2">
-              <button
-                onClick={() => onUpdateStatus(order.id, 'preparing')}
-                disabled={isUpdating}
-                className="flex-1 py-3 rounded-xl text-sm font-black transition-all disabled:opacity-50 bg-purple-600 hover:bg-purple-700 text-white shadow-md shadow-purple-200 active:scale-[0.97]"
-              >
-                {isUpdating ? 'Updating...' : 'Start Making'}
-              </button>
-              <button
-                onClick={() => onUpdateStatus(order.id, 'cancelled')}
-                disabled={isUpdating}
-                className="px-4 py-3 rounded-xl text-sm font-bold text-red-600 bg-red-50 border-2 border-red-200 hover:bg-red-100 transition-colors disabled:opacity-50"
-              >
-                Cancel
-              </button>
-            </div>
-          </>
+          <div className="flex gap-2">
+            <button
+              onClick={() => onUpdateStatus(order.id, 'preparing')}
+              disabled={isUpdating}
+              className="flex-1 py-3.5 rounded-xl text-sm font-black transition-all disabled:opacity-50 bg-primary hover:bg-primary-light text-secondary shadow-lg shadow-primary/20 active:scale-[0.97]"
+            >
+              {isUpdating ? 'Updating...' : 'Start Making'}
+            </button>
+            <button
+              onClick={() => onUpdateStatus(order.id, 'cancelled')}
+              disabled={isUpdating}
+              className="px-4 py-3.5 rounded-xl text-sm font-bold text-red-600 bg-red-50 border border-red-200 hover:bg-red-100 transition-colors disabled:opacity-50"
+            >
+              Cancel
+            </button>
+          </div>
         )}
 
-        {/* Preparing → Mark Ready + Move Back */}
         {isPreparing && (
           <>
             <button
               onClick={() => onUpdateStatus(order.id, 'ready')}
               disabled={isUpdating}
-              className="w-full py-3 rounded-xl text-sm font-black transition-all disabled:opacity-50 bg-green-600 hover:bg-green-700 text-white shadow-md shadow-green-200 active:scale-[0.97]"
+              className="w-full py-3.5 rounded-xl text-sm font-black transition-all disabled:opacity-50 bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-600/20 active:scale-[0.97]"
             >
               {isUpdating ? 'Updating...' : 'Mark Ready for Pickup'}
             </button>
             <button
               onClick={() => onUpdateStatus(order.id, 'pending')}
               disabled={isUpdating}
-              className="w-full py-2 rounded-xl text-xs font-bold text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50 flex items-center justify-center gap-1"
+              className="w-full py-2 rounded-xl text-xs font-bold text-accent hover:text-primary hover:bg-primary/5 transition-colors disabled:opacity-50 flex items-center justify-center gap-1"
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
@@ -451,13 +473,12 @@ function OrderCard({
           </>
         )}
 
-        {/* Ready — countdown + move back */}
         {isReady && (
           <>
             <div className="text-center py-1.5 space-y-1">
               <span className="text-green-700 font-bold text-sm block">Waiting for customer pickup</span>
               {readySince && (
-                <span className="text-xs text-gray-400 block">
+                <span className="text-xs text-accent/60 block">
                   Auto-completes in {readyMinLeft > 0 ? `${readyMinLeft} min` : 'moments'}
                 </span>
               )}
@@ -465,7 +486,7 @@ function OrderCard({
             <button
               onClick={() => onUpdateStatus(order.id, 'preparing')}
               disabled={isUpdating}
-              className="w-full py-2 rounded-xl text-xs font-bold text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50 flex items-center justify-center gap-1"
+              className="w-full py-2 rounded-xl text-xs font-bold text-accent hover:text-primary hover:bg-primary/5 transition-colors disabled:opacity-50 flex items-center justify-center gap-1"
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
@@ -475,12 +496,11 @@ function OrderCard({
           </>
         )}
 
-        {/* Completed/Cancelled — no main action, but allow reopening */}
         {isDone && (
           <button
             onClick={() => onUpdateStatus(order.id, 'pending')}
             disabled={isUpdating}
-            className="w-full py-2 rounded-xl text-xs font-bold text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50 flex items-center justify-center gap-1"
+            className="w-full py-2 rounded-xl text-xs font-bold text-accent hover:text-primary hover:bg-primary/5 transition-colors disabled:opacity-50 flex items-center justify-center gap-1"
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -494,9 +514,7 @@ function OrderCard({
 }
 
 function getMinutesSince(dateStr: string): number {
-  const now = new Date()
-  const then = new Date(dateStr)
-  return Math.floor((now.getTime() - then.getTime()) / 60000)
+  return Math.floor((new Date().getTime() - new Date(dateStr).getTime()) / 60000)
 }
 
 function getTimeSince(dateStr: string): string {
