@@ -53,7 +53,7 @@ export default function FavoriteButton({ menuItemId }: { menuItemId: string }) {
     <button
       onClick={toggleFavorite}
       disabled={loading}
-      className="p-1 transition-colors disabled:opacity-50"
+      className="p-3 -m-1 rounded-full transition-colors disabled:opacity-50 hover:bg-black/5 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
       aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
     >
       <svg
