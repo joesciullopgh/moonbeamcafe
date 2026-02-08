@@ -9,6 +9,20 @@ import type { Order, OrderStatus, OrderItem } from '@/lib/types/database'
 const ACTIVE_STATUSES: OrderStatus[] = ['pending', 'confirmed', 'preparing', 'ready']
 const READY_TIMEOUT_MINUTES = 15
 
+/*
+ * ─── Staff Queue Semantic Palette ─────────────────────────
+ *   Brand  (nav bar, primary actions):  primary / primary-light
+ *   Page bg:  secondary (warm latte)    Card surface: white
+ *
+ *   Status headers (all ≥ WCAG AA 4.5:1 with white text):
+ *     NEW     → amber-700   #b45309   (~5.0 : 1)
+ *     MAKING  → sky-700     #0369a1   (~5.9 : 1)
+ *     READY   → green-700   #15803d   (~5.1 : 1)
+ *     DONE    → stone-400   #a8a29e   (muted, no action)
+ *
+ *   Danger (urgent ring, cancel btn): red-700 #b91c1c
+ * ──────────────────────────────────────────────────────────
+ */
 const STATUS_CONFIG: Record<OrderStatus, {
   label: string
   bg: string
@@ -20,50 +34,50 @@ const STATUS_CONFIG: Record<OrderStatus, {
   pending: {
     label: 'NEW',
     bg: 'bg-white',
-    border: 'border-emerald-300',
-    headerBg: 'bg-emerald-500',
+    border: 'border-amber-200',
+    headerBg: 'bg-amber-700',
     headerText: 'text-white',
-    accent: 'text-emerald-600',
+    accent: 'text-amber-800',
   },
   confirmed: {
     label: 'NEW',
     bg: 'bg-white',
-    border: 'border-emerald-300',
-    headerBg: 'bg-emerald-500',
+    border: 'border-amber-200',
+    headerBg: 'bg-amber-700',
     headerText: 'text-white',
-    accent: 'text-emerald-600',
+    accent: 'text-amber-800',
   },
   preparing: {
     label: 'MAKING',
     bg: 'bg-white',
-    border: 'border-teal-300',
-    headerBg: 'bg-teal-500',
+    border: 'border-sky-200',
+    headerBg: 'bg-sky-700',
     headerText: 'text-white',
-    accent: 'text-teal-600',
+    accent: 'text-sky-800',
   },
   ready: {
     label: 'READY',
     bg: 'bg-white',
-    border: 'border-green-400',
-    headerBg: 'bg-green-500',
+    border: 'border-green-200',
+    headerBg: 'bg-green-700',
     headerText: 'text-white',
-    accent: 'text-green-600',
+    accent: 'text-green-800',
   },
   completed: {
     label: 'DONE',
-    bg: 'bg-gray-50',
-    border: 'border-gray-200',
-    headerBg: 'bg-gray-400',
+    bg: 'bg-stone-50',
+    border: 'border-stone-200',
+    headerBg: 'bg-stone-400',
     headerText: 'text-white',
-    accent: 'text-gray-400',
+    accent: 'text-stone-400',
   },
   cancelled: {
     label: 'CANCELLED',
-    bg: 'bg-gray-50',
-    border: 'border-gray-200',
-    headerBg: 'bg-gray-400',
+    bg: 'bg-stone-50',
+    border: 'border-stone-200',
+    headerBg: 'bg-stone-400',
     headerText: 'text-white',
-    accent: 'text-gray-400',
+    accent: 'text-stone-400',
   },
 }
 
@@ -257,7 +271,7 @@ export default function StaffDashboardPage() {
             </div>
             <button
               onClick={() => router.push('/')}
-              className="text-secondary/70 hover:text-white text-sm transition-colors"
+              className="text-secondary/70 hover:text-white text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-secondary/50 rounded"
             >
               Back to site
             </button>
@@ -268,17 +282,17 @@ export default function StaffDashboardPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
         {/* Status summary */}
         <div className="grid grid-cols-3 gap-3 mb-6">
-          <div className="rounded-xl border-2 border-primary/20 bg-primary/5 px-4 py-3 text-center">
-            <p className="text-3xl font-black text-primary">{newOrders.length}</p>
-            <p className="text-xs font-bold text-primary/70 uppercase tracking-wider">New</p>
+          <div className="rounded-xl border-2 border-amber-300 bg-amber-50 px-4 py-3 text-center">
+            <p className="text-3xl font-black text-amber-800">{newOrders.length}</p>
+            <p className="text-xs font-bold text-amber-700 uppercase tracking-wider">New</p>
           </div>
-          <div className="rounded-xl border-2 border-primary-light/30 bg-primary-light/5 px-4 py-3 text-center">
-            <p className="text-3xl font-black text-primary-light">{makingOrders.length}</p>
-            <p className="text-xs font-bold text-primary-light/70 uppercase tracking-wider">Making</p>
+          <div className="rounded-xl border-2 border-sky-300 bg-sky-50 px-4 py-3 text-center">
+            <p className="text-3xl font-black text-sky-800">{makingOrders.length}</p>
+            <p className="text-xs font-bold text-sky-700 uppercase tracking-wider">Making</p>
           </div>
-          <div className="rounded-xl border-2 border-green-500/30 bg-green-50 px-4 py-3 text-center">
-            <p className="text-3xl font-black text-green-700">{readyOrders.length}</p>
-            <p className="text-xs font-bold text-green-600 uppercase tracking-wider">Ready</p>
+          <div className="rounded-xl border-2 border-green-300 bg-green-50 px-4 py-3 text-center">
+            <p className="text-3xl font-black text-green-800">{readyOrders.length}</p>
+            <p className="text-xs font-bold text-green-700 uppercase tracking-wider">Ready</p>
           </div>
         </div>
 
@@ -317,7 +331,7 @@ export default function StaffDashboardPage() {
           <div className="mt-6">
             <button
               onClick={() => setShowReady(!showReady)}
-              className="flex items-center gap-2 text-sm font-bold text-green-700 hover:text-green-800 transition-colors"
+              className="flex items-center gap-2 text-sm font-bold text-green-800 hover:text-green-900 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-green-600 rounded"
             >
               <svg className={`w-4 h-4 transition-transform ${showReady ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -350,7 +364,7 @@ export default function StaffDashboardPage() {
           <div className="mt-8">
             <button
               onClick={() => setShowCompleted(!showCompleted)}
-              className="flex items-center gap-2 text-sm text-accent hover:text-primary font-medium transition-colors"
+              className="flex items-center gap-2 text-sm text-stone-600 hover:text-primary font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-stone-400 rounded"
             >
               <svg className={`w-4 h-4 transition-transform ${showCompleted ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -410,13 +424,10 @@ function OrderCard({
   }
 
   return (
-    <div className={`rounded-2xl border-2 ${config.border} ${config.bg} overflow-hidden transition-all shadow-sm hover:shadow-md ${isUpdating ? 'opacity-60 scale-[0.98]' : ''} ${isUrgent ? 'ring-2 ring-red-400 ring-offset-2' : ''}`}>
+    <div className={`rounded-2xl border-2 ${config.border} ${config.bg} overflow-hidden transition-all shadow-sm hover:shadow-md ${isUpdating ? 'opacity-60 scale-[0.98]' : ''} ${isUrgent ? 'ring-2 ring-red-600 ring-offset-2' : ''}`}>
       {/* Header */}
       <div className={`${config.headerBg} ${config.headerText} px-4 py-3`}>
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-black uppercase tracking-widest opacity-80">{config.label}</span>
-          <span className="text-xs font-mono opacity-60">#{order.id.slice(0, 8)}</span>
-        </div>
+        <span className="text-xs font-black uppercase tracking-widest">{config.label}</span>
         <p className="text-lg font-black mt-1 leading-tight truncate">{customerName}</p>
       </div>
 
@@ -426,7 +437,7 @@ function OrderCard({
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
         <span className={`text-sm font-bold ${isUrgent ? 'text-red-600' : 'text-text-dark'}`}>{timeSince}</span>
-        {isUrgent && <span className="text-xs font-bold text-red-500 bg-red-100 px-2 py-0.5 rounded-full ml-auto">URGENT</span>}
+        {isUrgent && <span className="text-xs font-bold text-red-800 bg-red-100 px-2 py-0.5 rounded-full ml-auto">URGENT</span>}
       </div>
 
       {/* Items */}
@@ -470,14 +481,14 @@ function OrderCard({
             <button
               onClick={() => onUpdateStatus(order.id, 'preparing')}
               disabled={isUpdating}
-              className="flex-1 py-3.5 rounded-xl text-sm font-black transition-all disabled:opacity-50 bg-primary hover:bg-primary-light text-secondary shadow-lg shadow-primary/20 active:scale-[0.97]"
+              className="flex-1 py-3.5 rounded-xl text-sm font-black transition-all disabled:opacity-50 bg-primary hover:bg-primary-light text-secondary shadow-lg shadow-primary/20 active:scale-[0.97] outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
             >
               {isUpdating ? 'Updating...' : 'Start Making'}
             </button>
             <button
               onClick={() => onUpdateStatus(order.id, 'cancelled')}
               disabled={isUpdating}
-              className="px-4 py-3.5 rounded-xl text-sm font-bold text-red-600 bg-red-50 border border-red-200 hover:bg-red-100 transition-colors disabled:opacity-50"
+              className="px-4 py-3.5 rounded-xl text-sm font-bold text-red-700 bg-red-50 border border-red-300 hover:bg-red-100 transition-colors disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-red-600"
             >
               Cancel
             </button>
@@ -489,14 +500,14 @@ function OrderCard({
             <button
               onClick={() => onUpdateStatus(order.id, 'ready')}
               disabled={isUpdating}
-              className="w-full py-3.5 rounded-xl text-sm font-black transition-all disabled:opacity-50 bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-600/20 active:scale-[0.97]"
+              className="w-full py-3.5 rounded-xl text-sm font-black transition-all disabled:opacity-50 bg-green-700 hover:bg-green-800 text-white shadow-lg shadow-green-700/20 active:scale-[0.97] outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-green-600"
             >
               {isUpdating ? 'Updating...' : 'Mark Ready for Pickup'}
             </button>
             <button
               onClick={() => onUpdateStatus(order.id, 'pending')}
               disabled={isUpdating}
-              className="w-full py-2 rounded-xl text-xs font-bold text-accent hover:text-primary hover:bg-primary/5 transition-colors disabled:opacity-50 flex items-center justify-center gap-1"
+              className="w-full py-2 rounded-xl text-xs font-bold text-stone-600 hover:text-primary hover:bg-stone-100 transition-colors disabled:opacity-50 flex items-center justify-center gap-1 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-stone-400"
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
@@ -509,9 +520,9 @@ function OrderCard({
         {isReady && (
           <>
             <div className="text-center py-1.5 space-y-1">
-              <span className="text-green-700 font-bold text-sm block">Waiting for customer pickup</span>
+              <span className="text-green-800 font-bold text-sm block">Waiting for customer pickup</span>
               {readySince && (
-                <span className="text-xs text-accent/60 block">
+                <span className="text-xs text-stone-500 block">
                   Auto-completes in {readyMinLeft > 0 ? `${readyMinLeft} min` : 'moments'}
                 </span>
               )}
@@ -519,7 +530,7 @@ function OrderCard({
             <button
               onClick={() => onUpdateStatus(order.id, 'preparing')}
               disabled={isUpdating}
-              className="w-full py-2 rounded-xl text-xs font-bold text-accent hover:text-primary hover:bg-primary/5 transition-colors disabled:opacity-50 flex items-center justify-center gap-1"
+              className="w-full py-2 rounded-xl text-xs font-bold text-stone-600 hover:text-primary hover:bg-stone-100 transition-colors disabled:opacity-50 flex items-center justify-center gap-1 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-stone-400"
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
@@ -533,7 +544,7 @@ function OrderCard({
           <button
             onClick={() => onUpdateStatus(order.id, 'pending')}
             disabled={isUpdating}
-            className="w-full py-2 rounded-xl text-xs font-bold text-accent hover:text-primary hover:bg-primary/5 transition-colors disabled:opacity-50 flex items-center justify-center gap-1"
+            className="w-full py-2 rounded-xl text-xs font-bold text-stone-600 hover:text-primary hover:bg-stone-100 transition-colors disabled:opacity-50 flex items-center justify-center gap-1 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-stone-400"
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
