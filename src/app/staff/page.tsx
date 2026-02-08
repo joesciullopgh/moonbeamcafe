@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useAuthStore } from '@/stores/auth-store'
 import type { Order, OrderStatus, OrderItem } from '@/lib/types/database'
 
 const ACTIVE_STATUSES: OrderStatus[] = ['pending', 'confirmed', 'preparing', 'ready']
+const READY_TIMEOUT_MINUTES = 15
 
 const STATUS_CONFIG: Record<OrderStatus, {
   label: string
@@ -59,6 +60,12 @@ const STATUS_CONFIG: Record<OrderStatus, {
   },
 }
 
+// Maps status → the previous status for "undo" / move-back
+const PREV_STATUS: Partial<Record<OrderStatus, OrderStatus>> = {
+  preparing: 'pending',
+  ready: 'preparing',
+}
+
 export default function StaffDashboardPage() {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
@@ -67,6 +74,9 @@ export default function StaffDashboardPage() {
   const { user, profile, loading: authLoading } = useAuthStore()
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
+
+  // Track when each order entered "ready" status (orderId → timestamp ms)
+  const readyTimestamps = useRef<Map<string, number>>(new Map())
 
   // Auth gate
   useEffect(() => {
@@ -88,8 +98,17 @@ export default function StaffDashboardPage() {
         .from('orders')
         .select('*')
         .order('created_at', { ascending: true })
-      setOrders((data as Order[]) || [])
+      const fetched = (data as Order[]) || []
+      setOrders(fetched)
       setLoading(false)
+
+      // Seed ready timestamps for orders already in "ready" state
+      const now = Date.now()
+      for (const o of fetched) {
+        if (o.status === 'ready' && !readyTimestamps.current.has(o.id)) {
+          readyTimestamps.current.set(o.id, now)
+        }
+      }
     }
     fetchOrders()
 
@@ -99,21 +118,36 @@ export default function StaffDashboardPage() {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'orders' },
         (payload) => {
-          setOrders(prev => [...prev, payload.new as Order])
+          const o = payload.new as Order
+          setOrders(prev => [...prev, o])
+          if (o.status === 'ready') {
+            readyTimestamps.current.set(o.id, Date.now())
+          }
         }
       )
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'orders' },
         (payload) => {
-          setOrders(prev => prev.map(o => o.id === (payload.new as Order).id ? payload.new as Order : o))
+          const o = payload.new as Order
+          setOrders(prev => prev.map(old => old.id === o.id ? o : old))
+          // Track transition into "ready"
+          if (o.status === 'ready' && !readyTimestamps.current.has(o.id)) {
+            readyTimestamps.current.set(o.id, Date.now())
+          }
+          // Clear timestamp if moved out of ready
+          if (o.status !== 'ready') {
+            readyTimestamps.current.delete(o.id)
+          }
         }
       )
       .on(
         'postgres_changes',
         { event: 'DELETE', schema: 'public', table: 'orders' },
         (payload) => {
-          setOrders(prev => prev.filter(o => o.id !== (payload.old as { id: string }).id))
+          const id = (payload.old as { id: string }).id
+          setOrders(prev => prev.filter(o => o.id !== id))
+          readyTimestamps.current.delete(id)
         }
       )
       .subscribe()
@@ -123,10 +157,10 @@ export default function StaffDashboardPage() {
     }
   }, [user, profile, supabase])
 
-  // Live clock for time updates (every 30s)
+  // Tick every 15s for time display + auto-complete check
   const [, setTick] = useState(0)
   useEffect(() => {
-    const interval = setInterval(() => setTick(t => t + 1), 30000)
+    const interval = setInterval(() => setTick(t => t + 1), 15000)
     return () => clearInterval(interval)
   }, [])
 
@@ -139,6 +173,11 @@ export default function StaffDashboardPage() {
 
     if (!error) {
       setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status } : o))
+      if (status === 'ready') {
+        readyTimestamps.current.set(orderId, Date.now())
+      } else {
+        readyTimestamps.current.delete(orderId)
+      }
     }
     setUpdatingIds(prev => {
       const next = new Set(prev)
@@ -146,6 +185,20 @@ export default function StaffDashboardPage() {
       return next
     })
   }, [supabase])
+
+  // Auto-complete ready orders past the timeout
+  useEffect(() => {
+    const now = Date.now()
+    const timeoutMs = READY_TIMEOUT_MINUTES * 60 * 1000
+    for (const order of orders) {
+      if (order.status === 'ready') {
+        const readySince = readyTimestamps.current.get(order.id)
+        if (readySince && now - readySince >= timeoutMs && !updatingIds.has(order.id)) {
+          updateStatus(order.id, 'completed')
+        }
+      }
+    }
+  }) // runs on every render/tick
 
   if (authLoading || loading) {
     return (
@@ -227,6 +280,7 @@ export default function StaffDashboardPage() {
                   order={order}
                   onUpdateStatus={updateStatus}
                   isUpdating={updatingIds.has(order.id)}
+                  readySince={readyTimestamps.current.get(order.id)}
                 />
               ))}
           </div>
@@ -271,10 +325,12 @@ function OrderCard({
   order,
   onUpdateStatus,
   isUpdating,
+  readySince,
 }: {
   order: Order
   onUpdateStatus: (id: string, status: OrderStatus) => void
   isUpdating: boolean
+  readySince?: number
 }) {
   const config = STATUS_CONFIG[order.status]
   const items = Array.isArray(order.items) ? (order.items as OrderItem[]) : []
@@ -282,8 +338,17 @@ function OrderCard({
   const isNew = order.status === 'pending' || order.status === 'confirmed'
   const isPreparing = order.status === 'preparing'
   const isReady = order.status === 'ready'
+  const isDone = order.status === 'completed' || order.status === 'cancelled'
   const isUrgent = isNew && getMinutesSince(order.created_at) >= 5
   const customerName = order.customer_name || 'Guest'
+  const prevStatus = PREV_STATUS[order.status]
+
+  // Countdown for ready orders
+  let readyMinLeft = 0
+  if (isReady && readySince) {
+    const elapsed = Math.floor((Date.now() - readySince) / 60000)
+    readyMinLeft = Math.max(0, READY_TIMEOUT_MINUTES - elapsed)
+  }
 
   return (
     <div className={`rounded-2xl border-2 ${config.border} ${config.bg} overflow-hidden transition-all shadow-sm ${isUpdating ? 'opacity-60 scale-[0.98]' : ''} ${isUrgent ? 'ring-2 ring-red-400 ring-offset-2' : ''}`}>
@@ -339,44 +404,89 @@ function OrderCard({
         <span className="font-black text-gray-900">${order.total.toFixed(2)}</span>
       </div>
 
-      {/* Action buttons — simplified flow */}
-      <div className="px-4 pb-4 pt-3">
-        {/* New orders → Start Making (skip "Accept", auto-accepted on payment) */}
+      {/* Action buttons */}
+      <div className="px-4 pb-4 pt-3 space-y-2">
+        {/* New orders → Start Making */}
         {isNew && (
-          <div className="flex gap-2">
+          <>
+            <div className="flex gap-2">
+              <button
+                onClick={() => onUpdateStatus(order.id, 'preparing')}
+                disabled={isUpdating}
+                className="flex-1 py-3 rounded-xl text-sm font-black transition-all disabled:opacity-50 bg-purple-600 hover:bg-purple-700 text-white shadow-md shadow-purple-200 active:scale-[0.97]"
+              >
+                {isUpdating ? 'Updating...' : 'Start Making'}
+              </button>
+              <button
+                onClick={() => onUpdateStatus(order.id, 'cancelled')}
+                disabled={isUpdating}
+                className="px-4 py-3 rounded-xl text-sm font-bold text-red-600 bg-red-50 border-2 border-red-200 hover:bg-red-100 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </>
+        )}
+
+        {/* Preparing → Mark Ready + Move Back */}
+        {isPreparing && (
+          <>
+            <button
+              onClick={() => onUpdateStatus(order.id, 'ready')}
+              disabled={isUpdating}
+              className="w-full py-3 rounded-xl text-sm font-black transition-all disabled:opacity-50 bg-green-600 hover:bg-green-700 text-white shadow-md shadow-green-200 active:scale-[0.97]"
+            >
+              {isUpdating ? 'Updating...' : 'Mark Ready for Pickup'}
+            </button>
+            <button
+              onClick={() => onUpdateStatus(order.id, 'pending')}
+              disabled={isUpdating}
+              className="w-full py-2 rounded-xl text-xs font-bold text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50 flex items-center justify-center gap-1"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+              </svg>
+              Move Back to New
+            </button>
+          </>
+        )}
+
+        {/* Ready — countdown + move back */}
+        {isReady && (
+          <>
+            <div className="text-center py-1.5 space-y-1">
+              <span className="text-green-700 font-bold text-sm block">Waiting for customer pickup</span>
+              {readySince && (
+                <span className="text-xs text-gray-400 block">
+                  Auto-completes in {readyMinLeft > 0 ? `${readyMinLeft} min` : 'moments'}
+                </span>
+              )}
+            </div>
             <button
               onClick={() => onUpdateStatus(order.id, 'preparing')}
               disabled={isUpdating}
-              className="flex-1 py-3 rounded-xl text-sm font-black transition-all disabled:opacity-50 bg-purple-600 hover:bg-purple-700 text-white shadow-md shadow-purple-200 active:scale-[0.97]"
+              className="w-full py-2 rounded-xl text-xs font-bold text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50 flex items-center justify-center gap-1"
             >
-              {isUpdating ? 'Updating...' : 'Start Making'}
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+              </svg>
+              Move Back to Making
             </button>
-            <button
-              onClick={() => onUpdateStatus(order.id, 'cancelled')}
-              disabled={isUpdating}
-              className="px-4 py-3 rounded-xl text-sm font-bold text-red-600 bg-red-50 border-2 border-red-200 hover:bg-red-100 transition-colors disabled:opacity-50"
-            >
-              Cancel
-            </button>
-          </div>
+          </>
         )}
 
-        {/* Preparing → Mark Ready (this is the final staff action) */}
-        {isPreparing && (
+        {/* Completed/Cancelled — no main action, but allow reopening */}
+        {isDone && (
           <button
-            onClick={() => onUpdateStatus(order.id, 'ready')}
+            onClick={() => onUpdateStatus(order.id, 'pending')}
             disabled={isUpdating}
-            className="w-full py-3 rounded-xl text-sm font-black transition-all disabled:opacity-50 bg-green-600 hover:bg-green-700 text-white shadow-md shadow-green-200 active:scale-[0.97]"
+            className="w-full py-2 rounded-xl text-xs font-bold text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50 flex items-center justify-center gap-1"
           >
-            {isUpdating ? 'Updating...' : 'Mark Ready for Pickup'}
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Reopen Order
           </button>
-        )}
-
-        {/* Ready — no action needed, waiting for customer */}
-        {isReady && (
-          <div className="text-center py-1">
-            <span className="text-green-700 font-bold text-sm">Waiting for customer pickup</span>
-          </div>
         )}
       </div>
     </div>
