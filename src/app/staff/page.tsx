@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useAuthStore } from '@/stores/auth-store'
+import { useStoreStatus } from '@/hooks/useStoreStatus'
 import type { Order, OrderStatus, OrderItem } from '@/lib/types/database'
 
 const ACTIVE_STATUSES: OrderStatus[] = ['pending', 'confirmed', 'preparing', 'ready']
@@ -96,6 +97,9 @@ export default function StaffDashboardPage() {
   const [showCompleted, setShowCompleted] = useState(false)
   const [updatingIds, setUpdatingIds] = useState<Set<string>>(new Set())
   const { user, profile, loading: authLoading } = useAuthStore()
+  const { status: storeStatus, toggleForcedClosed, loading: storeStatusLoading } = useStoreStatus()
+  const [closeReason, setCloseReason] = useState('break')
+  const [toggling, setToggling] = useState(false)
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
 
@@ -278,6 +282,62 @@ export default function StaffDashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Store Open/Closed Banner */}
+      {storeStatus && !storeStatusLoading && (
+        <div className={`px-4 sm:px-6 py-3 border-b ${
+          storeStatus.isOpen
+            ? 'bg-green-50 border-green-200'
+            : storeStatus.isForcedClosed
+              ? 'bg-red-50 border-red-200'
+              : 'bg-amber-50 border-amber-200'
+        }`}>
+          <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2">
+              <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+                storeStatus.isOpen ? 'bg-green-500' : storeStatus.isForcedClosed ? 'bg-red-500' : 'bg-amber-500'
+              }`} />
+              <span className={`text-sm font-bold ${
+                storeStatus.isOpen ? 'text-green-800' : storeStatus.isForcedClosed ? 'text-red-800' : 'text-amber-800'
+              }`}>
+                {storeStatus.message}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              {storeStatus.isOpen && !storeStatus.isForcedClosed && (
+                <>
+                  <select
+                    value={closeReason}
+                    onChange={e => setCloseReason(e.target.value)}
+                    className="text-xs border border-gray-300 rounded-lg px-2 py-1.5 outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  >
+                    <option value="break">Break</option>
+                    <option value="emergency">Emergency</option>
+                    <option value="staffing">Staffing</option>
+                    <option value="other">Other</option>
+                  </select>
+                  <button
+                    onClick={async () => { setToggling(true); await toggleForcedClosed(closeReason); setToggling(false) }}
+                    disabled={toggling}
+                    className="text-xs font-bold text-red-700 bg-red-100 border border-red-300 px-3 py-1.5 rounded-lg hover:bg-red-200 transition-colors disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-red-600"
+                  >
+                    {toggling ? 'Closing...' : 'Close Store'}
+                  </button>
+                </>
+              )}
+              {storeStatus.isForcedClosed && (
+                <button
+                  onClick={async () => { setToggling(true); await toggleForcedClosed(); setToggling(false) }}
+                  disabled={toggling}
+                  className="text-xs font-bold text-green-700 bg-green-100 border border-green-300 px-3 py-1.5 rounded-lg hover:bg-green-200 transition-colors disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-green-600"
+                >
+                  {toggling ? 'Reopening...' : 'Reopen Store'}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
         {/* Status summary */}

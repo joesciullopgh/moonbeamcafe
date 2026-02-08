@@ -6,15 +6,18 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useCartStore } from '@/stores/cart-store'
 import { useAuthStore } from '@/stores/auth-store'
+import { useStoreStatus } from '@/hooks/useStoreStatus'
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, clearCart, getTotal } = useCartStore()
   const { user, profile, setProfile } = useAuthStore()
+  const { status: storeStatus } = useStoreStatus()
   const [placing, setPlacing] = useState(false)
   const [error, setError] = useState('')
   const [acceptedTerms, setAcceptedTerms] = useState(false)
   const router = useRouter()
   const supabase = createClient()
+  const storeClosed = storeStatus && !storeStatus.isOpen
 
   const total = getTotal()
   const starsToEarn = Math.floor(total)
@@ -24,6 +27,11 @@ export default function CartPage() {
   const hasName = profile?.first_name && profile?.last_name
 
   async function handlePlaceOrder() {
+    if (storeClosed) {
+      setError('Sorry, the store is currently closed. Please try again during business hours.')
+      return
+    }
+
     if (!user) {
       router.push('/login')
       return
@@ -124,6 +132,25 @@ export default function CartPage() {
   return (
     <div className="min-h-[80vh] max-w-3xl mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold text-primary mb-8">Your Cart</h1>
+
+      {storeClosed && (
+        <div className="bg-red-50 border-2 border-red-200 rounded-xl p-5 mb-6">
+          <div className="flex items-start gap-3">
+            <svg className="w-5 h-5 text-red-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div>
+              <p className="font-bold text-red-800 text-sm">Store is currently closed</p>
+              <p className="text-red-700 text-sm mt-1">{storeStatus.message}</p>
+              {storeStatus.opensAtNext && (
+                <p className="text-red-600 text-xs mt-2">
+                  We open again {storeStatus.opensAtNext}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="bg-red-50 text-red-700 px-4 py-3 rounded-lg text-sm mb-6">{error}</div>
@@ -285,10 +312,10 @@ export default function CartPage() {
 
         <button
           onClick={handlePlaceOrder}
-          disabled={placing || (user ? !acceptedTerms || !hasName || !hasBillingInfo : false)}
+          disabled={placing || !!storeClosed || (user ? !acceptedTerms || !hasName || !hasBillingInfo : false)}
           className="w-full mt-6 bg-primary text-secondary py-3.5 rounded-xl font-bold hover:bg-primary-light transition-colors disabled:opacity-50 text-lg shadow-md shadow-primary/15"
         >
-          {placing ? 'Placing Order...' : user ? 'Place Order' : 'Sign In to Order'}
+          {storeClosed ? 'Store Closed' : placing ? 'Placing Order...' : user ? 'Place Order' : 'Sign In to Order'}
         </button>
 
         {!user && (

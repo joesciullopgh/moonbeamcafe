@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { useAuthStore } from '@/stores/auth-store'
 import { useStoreSettings } from '@/stores/store-settings'
@@ -19,8 +20,8 @@ const SETTING_FIELDS: SettingField[] = [
   { key: 'address_line1', label: 'Address Line 1', placeholder: '4621 Liberty Avenue', type: 'text', group: 'Location & Contact' },
   { key: 'address_line2', label: 'Address Line 2', placeholder: 'Pittsburgh, PA', type: 'text', group: 'Location & Contact' },
   { key: 'phone', label: 'Phone Number', placeholder: '(412) 251-1392', type: 'tel', group: 'Location & Contact' },
-  { key: 'hours_weekday', label: 'Weekday Hours', placeholder: 'Mon–Sat: 7am – 5pm', type: 'text', group: 'Hours' },
-  { key: 'hours_weekend', label: 'Weekend Hours', placeholder: 'Sunday: 9am – 3pm', type: 'text', group: 'Hours' },
+  { key: 'hours_weekday', label: 'Weekday Hours (display text)', placeholder: 'Mon–Sat: 7am – 5pm', type: 'text', group: 'Display Hours' },
+  { key: 'hours_weekend', label: 'Weekend Hours (display text)', placeholder: 'Sunday: 9am – 3pm', type: 'text', group: 'Display Hours' },
   { key: 'instagram_url', label: 'Instagram URL', placeholder: 'https://instagram.com/...', type: 'url', group: 'Social Media' },
   { key: 'facebook_url', label: 'Facebook URL', placeholder: 'https://facebook.com/...', type: 'url', group: 'Social Media' },
 ]
@@ -120,6 +121,17 @@ export default function AdminSettingsPage() {
           {groups.map(group => (
             <div key={group} className="bg-white rounded-xl border border-secondary-dark/20 p-6">
               <h2 className="text-lg font-semibold text-primary mb-4">{group}</h2>
+              {group === 'Display Hours' && (
+                <div className="bg-primary/5 rounded-lg px-4 py-3 mb-4 text-sm">
+                  <p className="text-accent">
+                    These are display-only text shown in the footer. To manage the actual store schedule
+                    (open/close times, order blocking), go to{' '}
+                    <Link href="/admin/hours" className="text-primary font-bold hover:underline">
+                      Store Hours
+                    </Link>.
+                  </p>
+                </div>
+              )}
               <div className="space-y-4">
                 {SETTING_FIELDS.filter(f => f.group === group).map(field => (
                   <div key={field.key}>
