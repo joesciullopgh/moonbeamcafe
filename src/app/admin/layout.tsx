@@ -10,6 +10,7 @@ const adminLinks = [
   { href: '/admin/menu', label: 'Menu' },
   { href: '/admin/customizations', label: 'Customizations' },
   { href: '/admin/orders', label: 'Orders' },
+  { href: '/admin/reports', label: 'Reports' },
   { href: '/admin/hours', label: 'Hours' },
   { href: '/admin/users', label: 'Users' },
   { href: '/admin/settings', label: 'Settings' },
@@ -45,7 +46,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="flex items-center gap-1 overflow-x-auto py-3">
             {adminLinks.map((link) => {
               // Only show admin-only links to admins
-              if ((link.href === '/admin/users' || link.href === '/admin/settings' || link.href === '/admin/hours') && profile.role !== 'admin') return null
+              if ((link.href === '/admin/users' || link.href === '/admin/settings' || link.href === '/admin/hours' || link.href === '/admin/reports') && profile.role !== 'admin') return null
               const isActive = pathname === link.href
               return (
                 <Link
