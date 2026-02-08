@@ -5,7 +5,6 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { useStoreSettings } from '@/stores/store-settings'
-import type { MenuItem } from '@/lib/types/database'
 
 const GOOGLE_PHOTOS_URL = 'https://share.google/QpQgYb0Vfhhg8ls84'
 
@@ -18,50 +17,36 @@ const GALLERY_IMAGES = [
   '/gallery/5.jpg',
 ]
 
-const SIGNATURE_NAMES = [
-  'Moonbeam Signature Latte',
-  'Honey Cinnamon Latte',
-  'Brown Sugar Oat Latte',
-  'Lavender Mocha',
-  'Rose Cardamom Latte',
-  'Maple Pecan Latte',
-]
-
-const SIGNATURE_FALLBACKS: Pick<MenuItem, 'name' | 'price' | 'description' | 'image_url'>[] = [
-  { name: 'Moonbeam Signature Latte', price: 5.75, description: 'Lavender, vanilla, espresso, and oat milk', image_url: null },
-  { name: 'Honey Cinnamon Latte', price: 5.50, description: 'Local honey, cinnamon, espresso, and steamed milk', image_url: null },
-  { name: 'Brown Sugar Oat Latte', price: 5.75, description: 'Brown sugar syrup, espresso, and oat milk', image_url: null },
-  { name: 'Lavender Mocha', price: 5.75, description: 'Lavender, chocolate, espresso, and steamed milk', image_url: null },
-  { name: 'Rose Cardamom Latte', price: 5.75, description: 'Rose water, cardamom, espresso, and steamed milk', image_url: null },
-  { name: 'Maple Pecan Latte', price: 5.75, description: 'Maple syrup, pecan, espresso, and steamed milk', image_url: null },
-]
-
-const DRINK_ACCENTS = [
-  { gradient: 'from-violet-100 to-purple-50', icon: '🌙', accent: 'text-violet-600', ring: 'ring-violet-200' },
-  { gradient: 'from-amber-100 to-yellow-50', icon: '🍯', accent: 'text-amber-600', ring: 'ring-amber-200' },
-  { gradient: 'from-orange-100 to-amber-50', icon: '🤎', accent: 'text-orange-700', ring: 'ring-orange-200' },
-  { gradient: 'from-purple-100 to-indigo-50', icon: '💜', accent: 'text-purple-600', ring: 'ring-purple-200' },
-  { gradient: 'from-rose-100 to-pink-50', icon: '🌹', accent: 'text-rose-600', ring: 'ring-rose-200' },
-  { gradient: 'from-orange-100 to-red-50', icon: '🍁', accent: 'text-orange-600', ring: 'ring-orange-200' },
-]
+interface FeaturedItem {
+  id: string
+  name: string
+  price: number
+  description: string
+  image_url: string | null
+  featured_tagline: string | null
+  category: string
+}
 
 export default function Home() {
   const { settings } = useStoreSettings()
-  const [signatureDrinks, setSignatureDrinks] = useState<Pick<MenuItem, 'name' | 'price' | 'description' | 'image_url'>[]>(SIGNATURE_FALLBACKS)
+  const [featuredItems, setFeaturedItems] = useState<FeaturedItem[]>([])
+  const [featuredLoading, setFeaturedLoading] = useState(true)
   const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
-    async function fetchSignature() {
+    async function fetchFeatured() {
       const { data } = await supabase
         .from('menu_items')
-        .select('name, price, description, image_url')
-        .in('name', SIGNATURE_NAMES)
+        .select('id, name, price, description, image_url, featured_tagline, category')
+        .eq('is_featured', true)
         .eq('is_available', true)
+        .order('featured_order', { ascending: true })
       if (data && data.length > 0) {
-        setSignatureDrinks(data)
+        setFeaturedItems(data)
       }
+      setFeaturedLoading(false)
     }
-    fetchSignature()
+    fetchFeatured()
   }, [supabase])
 
   return (
@@ -99,9 +84,6 @@ export default function Home() {
               <br />
               <span className="bg-gradient-to-r from-[#f5e6c8] to-white bg-clip-text text-transparent">Coffee Shop</span>
             </h1>
-            <p className="mt-6 text-lg sm:text-xl text-secondary/80 max-w-xl mx-auto font-light">
-              {settings.tagline}
-            </p>
             <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 href="/menu"
@@ -198,47 +180,45 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ===== SIGNATURE DRINKS ===== */}
-      <section className="py-20 sm:py-24 bg-gradient-to-b from-[#faf6ee] to-white relative">
-        {/* Decorative dots */}
-        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(#3d4a2d 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+      {/* ===== SIGNATURE CREATIONS ===== */}
+      {featuredItems.length > 0 && (
+        <section className="py-20 sm:py-24 bg-gradient-to-b from-[#faf6ee] to-white relative overflow-hidden">
+          {/* Decorative accents */}
+          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(#3d4a2d 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+          <div className="absolute -top-24 -right-24 w-96 h-96 bg-primary/[0.03] rounded-full blur-3xl" />
+          <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-secondary-dark/10 rounded-full blur-3xl" />
 
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative">
-          <div className="text-center mb-14">
-            <span className="inline-block text-xs font-bold uppercase tracking-[0.2em] text-accent mb-3">Menu Highlights</span>
-            <h2 className="text-3xl sm:text-4xl font-bold text-primary mb-4">
-              Our Signature Creations
-            </h2>
-            <p className="text-accent max-w-2xl mx-auto leading-relaxed">
-              Unique, handcrafted drinks you&apos;ll only find at {settings.store_name} — made with house-made syrups and organic ingredients
-            </p>
-          </div>
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative">
+            <div className="text-center mb-14">
+              <span className="inline-block text-xs font-bold uppercase tracking-[0.2em] text-accent mb-3">Only at {settings.store_name}</span>
+              <h2 className="text-3xl sm:text-4xl font-bold text-primary mb-4">
+                Signature Creations
+              </h2>
+              <p className="text-accent max-w-2xl mx-auto leading-relaxed">
+                Handcrafted originals made with house-made syrups, organic ingredients, and a little bit of magic
+              </p>
+            </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {signatureDrinks.map((drink, i) => (
-              <DrinkCard
-                key={drink.name}
-                name={drink.name}
-                price={`$${drink.price.toFixed(2)}`}
-                description={drink.description}
-                accent={DRINK_ACCENTS[i % DRINK_ACCENTS.length]}
-              />
-            ))}
-          </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {featuredItems.map(item => (
+                <FeaturedCard key={item.id} item={item} />
+              ))}
+            </div>
 
-          <div className="text-center mt-12">
-            <Link
-              href="/menu"
-              className="group inline-flex items-center gap-2 bg-primary text-secondary px-8 py-4 rounded-full font-semibold text-lg hover:bg-primary-light transition-all shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5"
-            >
-              See Full Menu
-              <svg className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-              </svg>
-            </Link>
+            <div className="text-center mt-12">
+              <Link
+                href="/menu"
+                className="group inline-flex items-center gap-2 bg-primary text-secondary px-8 py-4 rounded-full font-semibold text-lg hover:bg-primary-light transition-all shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5"
+              >
+                See Full Menu
+                <svg className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
+              </Link>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ===== ABOUT / STORY SECTION ===== */}
       <section className="relative overflow-hidden">
@@ -464,26 +444,59 @@ function FeatureCard({ icon, title, description }: { icon: React.ReactNode; titl
   )
 }
 
-function DrinkCard({ name, price, description, accent }: {
-  name: string
-  price: string
-  description: string
-  accent: { gradient: string; icon: string; accent: string; ring: string }
-}) {
+const CATEGORY_EMOJI: Record<string, string> = {
+  'Espresso Drinks': '☕',
+  'Brewed Coffee & Tea': '🍵',
+  'Specialty Drinks': '✨',
+  'Iced Drinks': '🧊',
+  'Food - Breakfast': '🥐',
+  'Food - Pastries': '🧁',
+  'Food - Lunch': '🥪',
+  'Kids Menu': '🧃',
+}
+
+function FeaturedCard({ item }: { item: FeaturedItem }) {
+  const emoji = CATEGORY_EMOJI[item.category] || '☕'
+
   return (
     <Link href="/menu" className="group block">
-      <div className={`bg-gradient-to-br ${accent.gradient} rounded-2xl overflow-hidden border border-white/80 hover:shadow-xl hover:shadow-black/5 transition-all duration-300 hover:-translate-y-1 ring-1 ${accent.ring}`}>
-        {/* Drink icon area */}
-        <div className="px-6 pt-8 pb-4 text-center">
-          <span className="text-5xl block mb-2 group-hover:scale-110 transition-transform duration-300">{accent.icon}</span>
+      <div className="rounded-2xl overflow-hidden bg-white shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-secondary-dark/10">
+        {/* Photo area */}
+        <div className="relative aspect-[4/3] overflow-hidden">
+          {item.image_url ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={item.image_url}
+              alt={item.name}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-primary/10 via-secondary to-secondary-dark/20 flex items-center justify-center">
+              <span className="text-7xl drop-shadow-sm group-hover:scale-110 transition-transform duration-300">{emoji}</span>
+            </div>
+          )}
+          {/* Gradient overlay */}
+          <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
+          {/* Price badge */}
+          <span className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm text-primary font-black text-sm px-3 py-1.5 rounded-full shadow-sm">
+            ${item.price.toFixed(2)}
+          </span>
         </div>
         {/* Info */}
-        <div className="bg-white/70 backdrop-blur-sm px-6 py-5 border-t border-white/50">
-          <div className="flex items-start justify-between gap-2 mb-2">
-            <h3 className="text-base font-bold text-primary leading-tight group-hover:text-primary-light transition-colors">{name}</h3>
-            <span className={`text-sm font-bold ${accent.accent} shrink-0`}>{price}</span>
+        <div className="p-5">
+          <h3 className="font-bold text-primary text-lg leading-tight group-hover:text-primary-light transition-colors">
+            {item.name}
+          </h3>
+          {item.featured_tagline && (
+            <p className="text-primary/50 text-sm italic mt-1">{item.featured_tagline}</p>
+          )}
+          <p className="text-accent text-sm mt-2 leading-relaxed line-clamp-2">{item.description}</p>
+          <div className="mt-4 flex items-center gap-2 text-primary/60 group-hover:text-primary transition-colors">
+            <span className="text-xs font-bold uppercase tracking-wider">Try it today</span>
+            <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
           </div>
-          <p className="text-accent/80 text-sm leading-relaxed">{description}</p>
         </div>
       </div>
     </Link>

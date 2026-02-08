@@ -63,6 +63,19 @@ export default function AdminMenuPage() {
     }
   }
 
+  async function toggleFeatured(item: MenuItem) {
+    const { error } = await supabase
+      .from('menu_items')
+      .update({ is_featured: !item.is_featured })
+      .eq('id', item.id)
+
+    if (!error) {
+      setMenuItems(prev =>
+        prev.map(i => i.id === item.id ? { ...i, is_featured: !i.is_featured } : i)
+      )
+    }
+  }
+
   async function deleteItem(id: string) {
     if (!confirm('Are you sure you want to delete this item?')) return
     const item = menuItems.find(i => i.id === id)
@@ -132,6 +145,7 @@ export default function AdminMenuPage() {
                 <th className="text-left px-4 py-3 font-medium text-primary hidden md:table-cell">Category</th>
                 <th className="text-left px-4 py-3 font-medium text-primary">Price</th>
                 <th className="text-left px-4 py-3 font-medium text-primary">Status</th>
+                <th className="text-center px-4 py-3 font-medium text-primary">Featured</th>
                 <th className="text-right px-4 py-3 font-medium text-primary">Actions</th>
               </tr>
             </thead>
@@ -174,6 +188,19 @@ export default function AdminMenuPage() {
                       {item.is_available ? 'Available' : 'Unavailable'}
                     </button>
                   </td>
+                  <td className="px-4 py-3 text-center">
+                    <button
+                      onClick={() => toggleFeatured(item)}
+                      className={`text-xl transition-colors ${
+                        item.is_featured
+                          ? 'text-amber-500 hover:text-amber-600'
+                          : 'text-gray-300 hover:text-amber-400'
+                      }`}
+                      title={item.is_featured ? 'Remove from featured' : 'Add to featured'}
+                    >
+                      {item.is_featured ? '★' : '☆'}
+                    </button>
+                  </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex gap-2 justify-end">
                       <button
@@ -194,7 +221,7 @@ export default function AdminMenuPage() {
               ))}
               {menuItems.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-accent">
+                  <td colSpan={7} className="px-4 py-8 text-center text-accent">
                     No menu items yet. Click &quot;Seed Default Menu&quot; to add the full menu, or add items manually.
                   </td>
                 </tr>
@@ -222,6 +249,9 @@ function MenuItemForm({
   const [category, setCategory] = useState(item?.category || MENU_CATEGORIES[0])
   const [customizable, setCustomizable] = useState(item?.customizable ?? false)
   const [isAvailable, setIsAvailable] = useState(item?.is_available ?? true)
+  const [isFeatured, setIsFeatured] = useState(item?.is_featured ?? false)
+  const [featuredTagline, setFeaturedTagline] = useState(item?.featured_tagline || '')
+  const [featuredOrder, setFeaturedOrder] = useState(item?.featured_order?.toString() || '0')
   const [imageUrl, setImageUrl] = useState(item?.image_url || '')
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(item?.image_url || null)
@@ -310,6 +340,9 @@ function MenuItemForm({
       category,
       customizable,
       is_available: isAvailable,
+      is_featured: isFeatured,
+      featured_tagline: featuredTagline || null,
+      featured_order: parseInt(featuredOrder) || 0,
       image_url: finalImageUrl || null,
     }
 
@@ -467,6 +500,45 @@ function MenuItemForm({
             </label>
           </div>
         </div>
+
+        {/* Featured Section */}
+        <div className="border-t border-secondary-dark/10 pt-4 mt-2">
+          <label className="flex items-center gap-2 mb-3">
+            <input
+              type="checkbox"
+              checked={isFeatured}
+              onChange={e => setIsFeatured(e.target.checked)}
+              className="w-4 h-4 text-amber-500 border-gray-300 rounded focus:ring-amber-500"
+            />
+            <span className="text-sm font-medium text-text-dark">★ Feature on Homepage</span>
+          </label>
+          {isFeatured && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ml-6">
+              <div>
+                <label className="block text-sm font-medium text-text-dark mb-1">Tagline</label>
+                <input
+                  value={featuredTagline}
+                  onChange={e => setFeaturedTagline(e.target.value)}
+                  placeholder="e.g. Our most loved creation"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none text-sm"
+                />
+                <p className="text-xs text-accent mt-1">Short marketing tagline for the homepage card</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-text-dark mb-1">Display Order</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={featuredOrder}
+                  onChange={e => setFeaturedOrder(e.target.value)}
+                  className="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none text-sm"
+                />
+                <p className="text-xs text-accent mt-1">Lower numbers appear first</p>
+              </div>
+            </div>
+          )}
+        </div>
+
         <div className="flex gap-3 pt-2">
           <button
             type="submit"

@@ -33,6 +33,9 @@ export interface MenuItem {
   is_available: boolean
   image_url: string | null
   customizable: boolean
+  is_featured: boolean
+  featured_tagline: string | null
+  featured_order: number
   created_at: string
 }
 
