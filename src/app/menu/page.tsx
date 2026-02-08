@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { MENU_ITEMS, MENU_CATEGORIES, type MenuItemData } from '@/lib/menu-data'
 import type { MenuItem } from '@/lib/types/database'
@@ -68,14 +67,14 @@ export default function MenuPage() {
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
         {/* Category Tabs */}
-        <div className="flex overflow-x-auto gap-2 pb-4 mb-8 scrollbar-hide">
+        <div className="flex overflow-x-auto gap-2.5 pb-4 mb-8 scrollbar-hide -mx-1 px-1">
           {categories.map((category) => (
             <button
               key={category}
               onClick={() => setActiveCategory(category)}
-              className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+              className={`whitespace-nowrap px-5 py-2.5 rounded-full text-sm font-bold transition-all ${
                 activeCategory === category
-                  ? 'bg-primary text-secondary'
+                  ? 'bg-primary text-secondary shadow-md shadow-primary/20'
                   : 'bg-secondary text-primary hover:bg-secondary-dark'
               }`}
             >
@@ -85,7 +84,7 @@ export default function MenuPage() {
         </div>
 
         {/* Menu Items Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {displayItems.map((item) => (
             <MenuCard
               key={item.name}
@@ -130,6 +129,19 @@ export default function MenuPage() {
   )
 }
 
+// Drink icon/emoji for visual variety
+const CATEGORY_ICONS: Record<string, string> = {
+  'Espresso Drinks': '☕',
+  'Brewed Coffee': '🫖',
+  'Cold Drinks': '🧊',
+  'Tea': '🍵',
+  'Specialty': '✨',
+  'Seasonal': '🍂',
+  'Pastries': '🥐',
+  'Food': '🥪',
+  'Smoothies': '🥤',
+}
+
 function MenuCard({
   item,
   onCustomize,
@@ -142,7 +154,7 @@ function MenuCard({
   const addItem = useCartStore(s => s.addItem)
   const isCustomizable = 'customizable' in item ? item.customizable : false
   const isMenuItem = !usingFallback && 'id' in item
-  const imageUrl = 'image_url' in item ? item.image_url : null
+  const categoryIcon = CATEGORY_ICONS[item.category] || '☕'
 
   function handleAddToCart() {
     if (!isMenuItem) return
@@ -157,45 +169,37 @@ function MenuCard({
   }
 
   return (
-    <div className="bg-white rounded-xl border border-secondary-dark/20 overflow-hidden hover:shadow-md transition-shadow">
-      {/* Product Image */}
-      <div className="relative w-full h-40 bg-primary/5">
-        <Image
-          src="/placeholder.svg"
-          alt={item.name}
-          fill
-          className="object-contain p-3"
-          sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-        />
-      </div>
-
-      {/* Card Content */}
-      <div className="p-5">
-        <div className="flex justify-between items-start gap-3">
-          <div className="flex-1">
-            <h3 className="font-semibold text-primary text-lg">{item.name}</h3>
-            <p className="text-accent text-sm mt-1">{item.description}</p>
-            {isCustomizable && (
-              <span className="inline-block mt-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                Customizable
-              </span>
-            )}
-          </div>
-          <div className="text-right flex-shrink-0 flex flex-col items-end gap-2">
-            <div className="flex items-center gap-1">
-              <span className="text-lg font-bold text-accent">${item.price.toFixed(2)}</span>
-              {isMenuItem && <FavoriteButton menuItemId={(item as MenuItem).id} />}
-            </div>
-            {isMenuItem && (
-              <button
-                onClick={handleAddToCart}
-                className="bg-primary text-secondary px-3 py-1.5 rounded-full text-xs font-medium hover:bg-primary-light transition-colors"
-              >
-                {isCustomizable ? 'Customize' : 'Add'}
-              </button>
-            )}
+    <div className="group relative bg-white rounded-2xl border border-gray-200/80 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex flex-col">
+      {/* Glass-style top accent */}
+      <div className="relative bg-gradient-to-br from-primary/[0.06] to-secondary/40 px-5 pt-5 pb-4">
+        <div className="flex items-start justify-between">
+          <span className="text-3xl">{categoryIcon}</span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-xl font-black text-primary">${item.price.toFixed(2)}</span>
+            {isMenuItem && <FavoriteButton menuItemId={(item as MenuItem).id} />}
           </div>
         </div>
+        <h3 className="font-bold text-primary text-lg mt-3 leading-tight">{item.name}</h3>
+        <p className="text-accent/80 text-sm mt-1.5 leading-relaxed line-clamp-2">{item.description}</p>
+      </div>
+
+      {/* Bottom action area */}
+      <div className="px-5 pb-5 pt-3 mt-auto">
+        {isMenuItem ? (
+          <button
+            onClick={handleAddToCart}
+            className="w-full bg-primary text-secondary py-3.5 rounded-xl font-bold text-base hover:bg-primary-light active:scale-[0.97] transition-all shadow-md shadow-primary/15 flex items-center justify-center gap-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            {isCustomizable ? 'Order & Customize' : 'Add to Order'}
+          </button>
+        ) : (
+          <div className="text-center text-sm text-accent/60 py-2">
+            Sign in to order
+          </div>
+        )}
       </div>
     </div>
   )
