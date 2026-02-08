@@ -12,58 +12,51 @@ const STATUS_CONFIG: Record<OrderStatus, {
   label: string
   bg: string
   border: string
-  badge: string
-  icon: string
+  headerBg: string
+  headerText: string
 }> = {
   pending: {
-    label: 'New Order',
-    bg: 'bg-amber-50',
-    border: 'border-amber-300',
-    badge: 'bg-amber-100 text-amber-800',
-    icon: '🔔',
+    label: 'NEW',
+    bg: 'bg-white',
+    border: 'border-amber-400',
+    headerBg: 'bg-amber-500',
+    headerText: 'text-white',
   },
   confirmed: {
-    label: 'Confirmed',
-    bg: 'bg-blue-50',
-    border: 'border-blue-300',
-    badge: 'bg-blue-100 text-blue-800',
-    icon: '✓',
+    label: 'NEW',
+    bg: 'bg-white',
+    border: 'border-amber-400',
+    headerBg: 'bg-amber-500',
+    headerText: 'text-white',
   },
   preparing: {
-    label: 'In Progress',
-    bg: 'bg-purple-50',
-    border: 'border-purple-300',
-    badge: 'bg-purple-100 text-purple-800',
-    icon: '☕',
+    label: 'MAKING',
+    bg: 'bg-white',
+    border: 'border-purple-500',
+    headerBg: 'bg-purple-600',
+    headerText: 'text-white',
   },
   ready: {
-    label: 'Ready',
-    bg: 'bg-green-50',
-    border: 'border-green-400',
-    badge: 'bg-green-100 text-green-800',
-    icon: '✅',
+    label: 'READY',
+    bg: 'bg-white',
+    border: 'border-green-500',
+    headerBg: 'bg-green-600',
+    headerText: 'text-white',
   },
   completed: {
-    label: 'Completed',
+    label: 'DONE',
     bg: 'bg-gray-50',
-    border: 'border-gray-200',
-    badge: 'bg-gray-100 text-gray-600',
-    icon: '📦',
+    border: 'border-gray-300',
+    headerBg: 'bg-gray-400',
+    headerText: 'text-white',
   },
   cancelled: {
-    label: 'Cancelled',
-    bg: 'bg-red-50',
-    border: 'border-red-200',
-    badge: 'bg-red-100 text-red-700',
-    icon: '✕',
+    label: 'CANCELLED',
+    bg: 'bg-gray-50',
+    border: 'border-red-300',
+    headerBg: 'bg-red-500',
+    headerText: 'text-white',
   },
-}
-
-const NEXT_ACTION: Record<string, { status: OrderStatus; label: string; color: string }> = {
-  pending: { status: 'confirmed', label: 'Accept Order', color: 'bg-blue-600 hover:bg-blue-700 text-white' },
-  confirmed: { status: 'preparing', label: 'Start Making', color: 'bg-purple-600 hover:bg-purple-700 text-white' },
-  preparing: { status: 'ready', label: 'Mark Ready', color: 'bg-green-600 hover:bg-green-700 text-white' },
-  ready: { status: 'completed', label: 'Complete', color: 'bg-gray-600 hover:bg-gray-700 text-white' },
 }
 
 export default function StaffDashboardPage() {
@@ -100,7 +93,6 @@ export default function StaffDashboardPage() {
     }
     fetchOrders()
 
-    // Subscribe to ALL order changes in realtime
     const channel = supabase
       .channel('staff-orders-realtime')
       .on(
@@ -131,6 +123,13 @@ export default function StaffDashboardPage() {
     }
   }, [user, profile, supabase])
 
+  // Live clock for time updates (every 30s)
+  const [, setTick] = useState(0)
+  useEffect(() => {
+    const interval = setInterval(() => setTick(t => t + 1), 30000)
+    return () => clearInterval(interval)
+  }, [])
+
   const updateStatus = useCallback(async (orderId: string, status: OrderStatus) => {
     setUpdatingIds(prev => new Set(prev).add(orderId))
     const { error } = await supabase
@@ -139,7 +138,6 @@ export default function StaffDashboardPage() {
       .eq('id', orderId)
 
     if (!error) {
-      // Optimistic update (realtime will also fire)
       setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status } : o))
     }
     setUpdatingIds(prev => {
@@ -160,10 +158,8 @@ export default function StaffDashboardPage() {
   const activeOrders = orders.filter(o => ACTIVE_STATUSES.includes(o.status))
   const completedOrders = orders.filter(o => o.status === 'completed' || o.status === 'cancelled')
 
-  // Group by status for the column view
-  const pendingOrders = activeOrders.filter(o => o.status === 'pending')
-  const confirmedOrders = activeOrders.filter(o => o.status === 'confirmed')
-  const preparingOrders = activeOrders.filter(o => o.status === 'preparing')
+  const newOrders = activeOrders.filter(o => o.status === 'pending' || o.status === 'confirmed')
+  const makingOrders = activeOrders.filter(o => o.status === 'preparing')
   const readyOrders = activeOrders.filter(o => o.status === 'ready')
 
   return (
@@ -191,12 +187,20 @@ export default function StaffDashboardPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-        {/* Status summary bar */}
-        <div className="grid grid-cols-4 gap-3 mb-6">
-          <StatusCount label="New" count={pendingOrders.length} color="bg-amber-100 text-amber-800 border-amber-300" />
-          <StatusCount label="Confirmed" count={confirmedOrders.length} color="bg-blue-100 text-blue-800 border-blue-300" />
-          <StatusCount label="In Progress" count={preparingOrders.length} color="bg-purple-100 text-purple-800 border-purple-300" />
-          <StatusCount label="Ready" count={readyOrders.length} color="bg-green-100 text-green-800 border-green-300" />
+        {/* Status summary bar — 3 columns */}
+        <div className="grid grid-cols-3 gap-3 mb-6">
+          <div className="rounded-xl border-2 border-amber-400 bg-amber-50 px-4 py-3 text-center">
+            <p className="text-3xl font-black text-amber-700">{newOrders.length}</p>
+            <p className="text-xs font-bold text-amber-600 uppercase tracking-wider">New</p>
+          </div>
+          <div className="rounded-xl border-2 border-purple-500 bg-purple-50 px-4 py-3 text-center">
+            <p className="text-3xl font-black text-purple-700">{makingOrders.length}</p>
+            <p className="text-xs font-bold text-purple-600 uppercase tracking-wider">Making</p>
+          </div>
+          <div className="rounded-xl border-2 border-green-500 bg-green-50 px-4 py-3 text-center">
+            <p className="text-3xl font-black text-green-700">{readyOrders.length}</p>
+            <p className="text-xs font-bold text-green-600 uppercase tracking-wider">Ready</p>
+          </div>
         </div>
 
         {/* Active Orders — card grid */}
@@ -212,8 +216,7 @@ export default function StaffDashboardPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {activeOrders
               .sort((a, b) => {
-                // Sort by status priority, then by time
-                const priority: Record<string, number> = { pending: 0, confirmed: 1, preparing: 2, ready: 3 }
+                const priority: Record<string, number> = { pending: 0, confirmed: 0, preparing: 1, ready: 2 }
                 const pDiff = (priority[a.status] ?? 99) - (priority[b.status] ?? 99)
                 if (pDiff !== 0) return pDiff
                 return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
@@ -264,15 +267,6 @@ export default function StaffDashboardPage() {
   )
 }
 
-function StatusCount({ label, count, color }: { label: string; count: number; color: string }) {
-  return (
-    <div className={`rounded-xl border px-4 py-3 text-center ${color}`}>
-      <p className="text-2xl font-bold">{count}</p>
-      <p className="text-xs font-medium opacity-80">{label}</p>
-    </div>
-  )
-}
-
 function OrderCard({
   order,
   onUpdateStatus,
@@ -283,42 +277,53 @@ function OrderCard({
   isUpdating: boolean
 }) {
   const config = STATUS_CONFIG[order.status]
-  const nextAction = NEXT_ACTION[order.status]
   const items = Array.isArray(order.items) ? (order.items as OrderItem[]) : []
   const timeSince = getTimeSince(order.created_at)
+  const isNew = order.status === 'pending' || order.status === 'confirmed'
+  const isPreparing = order.status === 'preparing'
+  const isReady = order.status === 'ready'
+  const isUrgent = isNew && getMinutesSince(order.created_at) >= 5
+  const customerName = order.customer_name || 'Guest'
 
   return (
-    <div className={`rounded-2xl border-2 ${config.border} ${config.bg} overflow-hidden transition-all ${isUpdating ? 'opacity-60 scale-[0.98]' : ''}`}>
-      {/* Card header */}
-      <div className="px-4 pt-4 pb-3 flex items-center justify-between">
-        <div>
-          <p className="text-xs text-gray-500 font-mono">#{order.id.slice(0, 8)}</p>
-          <p className="text-xs text-gray-400 mt-0.5">{timeSince}</p>
+    <div className={`rounded-2xl border-2 ${config.border} ${config.bg} overflow-hidden transition-all shadow-sm ${isUpdating ? 'opacity-60 scale-[0.98]' : ''} ${isUrgent ? 'ring-2 ring-red-400 ring-offset-2' : ''}`}>
+      {/* Colored header band with status + customer name */}
+      <div className={`${config.headerBg} ${config.headerText} px-4 py-3`}>
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-black uppercase tracking-widest opacity-90">{config.label}</span>
+          <span className="text-xs font-mono opacity-70">#{order.id.slice(0, 8)}</span>
         </div>
-        <span className={`px-3 py-1 rounded-full text-xs font-bold ${config.badge}`}>
-          {config.icon} {config.label}
-        </span>
+        <p className="text-lg font-black mt-1 leading-tight truncate">{customerName}</p>
+      </div>
+
+      {/* Time — prominent */}
+      <div className={`px-4 py-2.5 flex items-center gap-2 border-b ${isUrgent ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-100'}`}>
+        <svg className={`w-4 h-4 shrink-0 ${isUrgent ? 'text-red-500' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span className={`text-sm font-bold ${isUrgent ? 'text-red-600' : 'text-gray-700'}`}>{timeSince}</span>
+        {isUrgent && <span className="text-xs font-bold text-red-500 bg-red-100 px-2 py-0.5 rounded-full ml-auto">URGENT</span>}
       </div>
 
       {/* Items list */}
-      <div className="px-4 pb-3">
-        <div className="space-y-1.5">
+      <div className="px-4 py-3">
+        <div className="space-y-2">
           {items.map((item, i) => (
-            <div key={i} className="flex items-start gap-2">
-              <span className="bg-white/70 text-xs font-bold text-gray-600 w-5 h-5 rounded flex items-center justify-center shrink-0 mt-0.5">
+            <div key={i} className="flex items-start gap-2.5">
+              <span className="bg-gray-900 text-white text-xs font-black w-6 h-6 rounded-md flex items-center justify-center shrink-0 mt-0.5">
                 {item.quantity || 1}
               </span>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-gray-800 leading-tight">{item.menu_item_name}</p>
+                <p className="text-sm font-bold text-gray-900 leading-tight">{item.menu_item_name}</p>
                 {Array.isArray(item.customizations) && item.customizations.length > 0 && (
-                  <p className="text-xs text-gray-500 leading-tight mt-0.5">
+                  <p className="text-xs text-gray-600 leading-tight mt-0.5 font-medium">
                     {item.customizations.map(c => c.name).join(' · ')}
                   </p>
                 )}
                 {item.special_instructions && (
-                  <p className="text-xs text-amber-700 bg-amber-100/60 rounded px-1.5 py-0.5 mt-1 leading-tight">
-                    📝 {item.special_instructions}
-                  </p>
+                  <div className="text-xs font-bold text-amber-800 bg-amber-100 rounded-md px-2 py-1 mt-1 leading-tight">
+                    NOTE: {item.special_instructions}
+                  </div>
                 )}
               </div>
             </div>
@@ -327,45 +332,68 @@ function OrderCard({
       </div>
 
       {/* Total */}
-      <div className="px-4 py-2 border-t border-black/5 flex items-center justify-between">
-        <span className="text-sm text-gray-500">{items.reduce((sum, it) => sum + (it.quantity || 1), 0)} item{items.reduce((sum, it) => sum + (it.quantity || 1), 0) !== 1 ? 's' : ''}</span>
-        <span className="font-bold text-gray-800">${order.total.toFixed(2)}</span>
+      <div className="px-4 py-2 border-t border-gray-200 flex items-center justify-between bg-gray-50">
+        <span className="text-sm font-semibold text-gray-600">
+          {items.reduce((sum, it) => sum + (it.quantity || 1), 0)} item{items.reduce((sum, it) => sum + (it.quantity || 1), 0) !== 1 ? 's' : ''}
+        </span>
+        <span className="font-black text-gray-900">${order.total.toFixed(2)}</span>
       </div>
 
-      {/* Action buttons */}
-      {nextAction && (
-        <div className="px-4 pb-4 pt-2 flex gap-2">
-          <button
-            onClick={() => onUpdateStatus(order.id, nextAction.status)}
-            disabled={isUpdating}
-            className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-50 ${nextAction.color} shadow-sm`}
-          >
-            {isUpdating ? 'Updating...' : nextAction.label}
-          </button>
-          {order.status !== 'ready' && (
+      {/* Action buttons — simplified flow */}
+      <div className="px-4 pb-4 pt-3">
+        {/* New orders → Start Making (skip "Accept", auto-accepted on payment) */}
+        {isNew && (
+          <div className="flex gap-2">
+            <button
+              onClick={() => onUpdateStatus(order.id, 'preparing')}
+              disabled={isUpdating}
+              className="flex-1 py-3 rounded-xl text-sm font-black transition-all disabled:opacity-50 bg-purple-600 hover:bg-purple-700 text-white shadow-md shadow-purple-200 active:scale-[0.97]"
+            >
+              {isUpdating ? 'Updating...' : 'Start Making'}
+            </button>
             <button
               onClick={() => onUpdateStatus(order.id, 'cancelled')}
               disabled={isUpdating}
-              className="px-3 py-2.5 rounded-xl text-sm font-medium text-red-600 bg-white border border-red-200 hover:bg-red-50 transition-colors disabled:opacity-50"
+              className="px-4 py-3 rounded-xl text-sm font-bold text-red-600 bg-red-50 border-2 border-red-200 hover:bg-red-100 transition-colors disabled:opacity-50"
             >
               Cancel
             </button>
-          )}
-        </div>
-      )}
+          </div>
+        )}
+
+        {/* Preparing → Mark Ready (this is the final staff action) */}
+        {isPreparing && (
+          <button
+            onClick={() => onUpdateStatus(order.id, 'ready')}
+            disabled={isUpdating}
+            className="w-full py-3 rounded-xl text-sm font-black transition-all disabled:opacity-50 bg-green-600 hover:bg-green-700 text-white shadow-md shadow-green-200 active:scale-[0.97]"
+          >
+            {isUpdating ? 'Updating...' : 'Mark Ready for Pickup'}
+          </button>
+        )}
+
+        {/* Ready — no action needed, waiting for customer */}
+        {isReady && (
+          <div className="text-center py-1">
+            <span className="text-green-700 font-bold text-sm">Waiting for customer pickup</span>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
 
-function getTimeSince(dateStr: string): string {
+function getMinutesSince(dateStr: string): number {
   const now = new Date()
   const then = new Date(dateStr)
-  const diffMs = now.getTime() - then.getTime()
-  const diffMin = Math.floor(diffMs / 60000)
+  return Math.floor((now.getTime() - then.getTime()) / 60000)
+}
 
+function getTimeSince(dateStr: string): string {
+  const diffMin = getMinutesSince(dateStr)
   if (diffMin < 1) return 'Just now'
-  if (diffMin < 60) return `${diffMin}m ago`
+  if (diffMin < 60) return `${diffMin} min ago`
   const diffHr = Math.floor(diffMin / 60)
   if (diffHr < 24) return `${diffHr}h ${diffMin % 60}m ago`
-  return then.toLocaleDateString()
+  return new Date(dateStr).toLocaleDateString()
 }

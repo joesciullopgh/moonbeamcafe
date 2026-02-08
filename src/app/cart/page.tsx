@@ -36,10 +36,15 @@ export default function CartPage() {
       item_total: item.item_total,
     }))
 
+    const customerName = profile
+      ? [profile.first_name, profile.last_name].filter(Boolean).join(' ') || profile.email
+      : null
+
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .insert({
         user_id: user.id,
+        customer_name: customerName,
         items: orderItems,
         total,
         status: 'pending',

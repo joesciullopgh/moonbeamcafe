@@ -17,16 +17,25 @@ const STATUS_COLORS: Record<OrderStatus, string> = {
 }
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
-  pending: 'Pending',
-  confirmed: 'Confirmed',
-  preparing: 'In Progress',
+  pending: 'Order Received',
+  confirmed: 'Order Received',
+  preparing: 'Being Prepared',
   ready: 'Ready for Pickup',
-  completed: 'Completed',
+  completed: 'Complete',
   cancelled: 'Cancelled',
 }
 
-const STATUS_STEPS: OrderStatus[] = ['pending', 'confirmed', 'preparing', 'ready', 'completed']
-const STEP_LABELS = ['Received', 'Confirmed', 'In Progress', 'Ready', 'Complete']
+// Simplified 3-step progress: orders are auto-accepted, "ready" = complete
+const STATUS_STEPS: OrderStatus[] = ['pending', 'preparing', 'ready']
+const STEP_LABELS = ['Received', 'Preparing', 'Ready for Pickup']
+
+// Map confirmed → same step as pending (auto-accepted)
+function getStepIndex(status: OrderStatus): number {
+  if (status === 'pending' || status === 'confirmed') return 0
+  if (status === 'preparing') return 1
+  if (status === 'ready' || status === 'completed') return 2
+  return -1 // cancelled
+}
 
 export default function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
@@ -88,7 +97,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     )
   }
 
-  const currentStep = STATUS_STEPS.indexOf(order.status)
+  const currentStep = getStepIndex(order.status)
 
   return (
     <div className="min-h-[80vh] max-w-3xl mx-auto px-4 py-8">
