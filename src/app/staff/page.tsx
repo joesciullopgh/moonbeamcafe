@@ -137,10 +137,14 @@ export default function StaffDashboardPage() {
 
       setLoading(false)
 
-      const now = Date.now()
+      // Use the DB updated_at as the "ready since" timestamp so the
+      // 15-min auto-complete works even after a page reload.
       for (const o of fetched) {
         if (o.status === 'ready' && !readyTimestamps.current.has(o.id)) {
-          readyTimestamps.current.set(o.id, now)
+          const readyAt = o.updated_at
+            ? new Date(o.updated_at).getTime()
+            : Date.now()
+          readyTimestamps.current.set(o.id, readyAt)
         }
       }
     }
