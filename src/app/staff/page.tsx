@@ -424,7 +424,7 @@ export default function StaffDashboardPage() {
                     {newOrders.length}
                   </span>
                 </div>
-                <div className="flex-1 overflow-y-auto space-y-3 pb-4 scrollbar-thin">
+                <div className="flex-1 overflow-y-auto space-y-3 pb-20 scrollbar-thin">
                   {newOrders
                     .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
                     .map(order => (
@@ -453,7 +453,7 @@ export default function StaffDashboardPage() {
                     {makingOrders.length}
                   </span>
                 </div>
-                <div className="flex-1 overflow-y-auto space-y-3 pb-4 scrollbar-thin">
+                <div className="flex-1 overflow-y-auto space-y-3 pb-20 scrollbar-thin">
                   {makingOrders
                     .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
                     .map(order => (
@@ -483,7 +483,7 @@ export default function StaffDashboardPage() {
                     {readyOrders.length}
                   </span>
                 </div>
-                <div className="flex-1 overflow-y-auto space-y-3 pb-4 scrollbar-thin">
+                <div className="flex-1 overflow-y-auto space-y-3 pb-20 scrollbar-thin">
                   {readyOrders
                     .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
                     .map(order => (
