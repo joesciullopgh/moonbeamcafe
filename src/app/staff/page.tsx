@@ -409,10 +409,10 @@ export default function StaffDashboardPage() {
             </div>
           </div>
         ) : (
-          <div className="flex-1 overflow-x-auto overflow-y-hidden snap-x snap-mandatory lg:snap-none">
-            <div className="flex lg:grid lg:grid-cols-3 gap-3 sm:gap-5 pl-3 pr-8 sm:px-6 py-3 sm:py-4 min-h-0 h-full max-w-7xl mx-auto">
+          <div className="flex-1 overflow-x-auto overflow-y-hidden snap-x snap-mandatory lg:snap-none lg:overflow-visible">
+            <div className="flex lg:grid lg:grid-cols-3 lg:gap-5 lg:px-6 lg:py-4 min-h-0 h-full max-w-7xl lg:mx-auto">
               {/* ─── NEW Column ─── */}
-              <div className="flex-shrink-0 w-[calc(100vw-2.5rem)] sm:w-[60vw] lg:w-auto snap-center flex flex-col min-h-0">
+              <div className="flex-shrink-0 w-screen lg:w-auto snap-start px-4 sm:px-6 lg:px-0 pt-3 lg:pt-0 flex flex-col min-h-0">
                 <div className="flex items-center gap-2.5 mb-3">
                   <div className="w-3 h-3 rounded-full bg-amber-500 shrink-0" />
                   <h2 className="font-bold text-amber-800 text-sm uppercase tracking-wider">Queue</h2>
@@ -441,7 +441,7 @@ export default function StaffDashboardPage() {
               </div>
 
               {/* ─── MAKING Column ─── */}
-              <div className="flex-shrink-0 w-[calc(100vw-2.5rem)] sm:w-[60vw] lg:w-auto snap-center flex flex-col min-h-0">
+              <div className="flex-shrink-0 w-screen lg:w-auto snap-start px-4 sm:px-6 lg:px-0 pt-3 lg:pt-0 flex flex-col min-h-0">
                 <div className="flex items-center gap-2.5 mb-3">
                   <div className="w-3 h-3 rounded-full bg-sky-500 shrink-0 animate-pulse" />
                   <h2 className="font-bold text-sky-800 text-sm uppercase tracking-wider">Making</h2>
@@ -471,7 +471,7 @@ export default function StaffDashboardPage() {
               </div>
 
               {/* ─── READY Column ─── */}
-              <div className="flex-shrink-0 w-[calc(100vw-2.5rem)] sm:w-[60vw] lg:w-auto snap-center flex flex-col min-h-0">
+              <div className="flex-shrink-0 w-screen lg:w-auto snap-start px-4 sm:px-6 lg:px-0 pt-3 lg:pt-0 flex flex-col min-h-0">
                 <div className="flex items-center gap-2.5 mb-3">
                   <div className="w-3 h-3 rounded-full bg-green-500 shrink-0" />
                   <h2 className="font-bold text-green-800 text-sm uppercase tracking-wider">Ready</h2>
