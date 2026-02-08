@@ -413,7 +413,7 @@ export default function StaffDashboardPage() {
             </div>
           </div>
         ) : (
-          <div className="flex-1 overflow-x-auto overflow-y-hidden snap-x snap-mandatory lg:snap-none lg:overflow-visible">
+          <div className="flex-1 overflow-x-auto overflow-y-hidden snap-x snap-mandatory lg:snap-none lg:overflow-hidden">
             <div className="flex lg:grid lg:grid-cols-3 lg:gap-5 lg:px-6 lg:py-4 min-h-0 h-full max-w-7xl lg:mx-auto">
               {/* ─── NEW Column ─── */}
               <div className="flex-shrink-0 w-screen lg:w-auto snap-start px-4 sm:px-6 lg:px-0 pt-3 lg:pt-0 flex flex-col min-h-0">
