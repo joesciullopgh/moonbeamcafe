@@ -259,7 +259,13 @@ function MenuItemForm({
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const formRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
+
+  // Scroll form into view when it opens
+  useEffect(() => {
+    formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [])
 
   function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -362,7 +368,7 @@ function MenuItemForm({
   }
 
   return (
-    <div className="bg-white rounded-xl border border-secondary-dark/20 p-6 mb-6">
+    <div ref={formRef} className="bg-white rounded-xl border border-secondary-dark/20 p-6 mb-6">
       <h2 className="text-xl font-bold text-primary mb-4">
         {item ? 'Edit Item' : 'New Item'}
       </h2>
