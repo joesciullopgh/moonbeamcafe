@@ -354,8 +354,8 @@ export default function StaffDashboardPage() {
           <div className="flex-1 overflow-x-auto overflow-y-hidden snap-x snap-mandatory lg:snap-none">
             <div className="flex lg:grid lg:grid-cols-3 gap-3 sm:gap-5 px-3 sm:px-6 py-3 sm:py-4 min-h-0 h-full max-w-7xl mx-auto">
               {/* ─── NEW Column ─── */}
-              <div className="flex-shrink-0 w-[calc(100vw-1.5rem)] sm:w-[60vw] lg:w-auto snap-center flex flex-col min-h-0">
-                <div className="flex items-center gap-2.5 mb-3 px-1">
+              <div className="flex-shrink-0 w-[calc(100vw-2.5rem)] sm:w-[60vw] lg:w-auto snap-center flex flex-col min-h-0">
+                <div className="flex items-center gap-2.5 mb-3">
                   <div className="w-3 h-3 rounded-full bg-amber-500 shrink-0" />
                   <h2 className="font-bold text-amber-800 text-sm uppercase tracking-wider">Queue</h2>
                   <span className="bg-amber-100 text-amber-800 text-xs font-black px-2.5 py-0.5 rounded-full min-w-[1.75rem] text-center">
@@ -383,8 +383,8 @@ export default function StaffDashboardPage() {
               </div>
 
               {/* ─── MAKING Column ─── */}
-              <div className="flex-shrink-0 w-[calc(100vw-1.5rem)] sm:w-[60vw] lg:w-auto snap-center flex flex-col min-h-0">
-                <div className="flex items-center gap-2.5 mb-3 px-1">
+              <div className="flex-shrink-0 w-[calc(100vw-2.5rem)] sm:w-[60vw] lg:w-auto snap-center flex flex-col min-h-0">
+                <div className="flex items-center gap-2.5 mb-3">
                   <div className="w-3 h-3 rounded-full bg-sky-500 shrink-0 animate-pulse" />
                   <h2 className="font-bold text-sky-800 text-sm uppercase tracking-wider">Making</h2>
                   <span className="bg-sky-100 text-sky-800 text-xs font-black px-2.5 py-0.5 rounded-full min-w-[1.75rem] text-center">
@@ -413,8 +413,8 @@ export default function StaffDashboardPage() {
               </div>
 
               {/* ─── READY Column ─── */}
-              <div className="flex-shrink-0 w-[calc(100vw-1.5rem)] sm:w-[60vw] lg:w-auto snap-center flex flex-col min-h-0">
-                <div className="flex items-center gap-2.5 mb-3 px-1">
+              <div className="flex-shrink-0 w-[calc(100vw-2.5rem)] sm:w-[60vw] lg:w-auto snap-center flex flex-col min-h-0">
+                <div className="flex items-center gap-2.5 mb-3">
                   <div className="w-3 h-3 rounded-full bg-green-500 shrink-0" />
                   <h2 className="font-bold text-green-800 text-sm uppercase tracking-wider">Ready</h2>
                   <span className="bg-green-100 text-green-800 text-xs font-black px-2.5 py-0.5 rounded-full min-w-[1.75rem] text-center">
@@ -510,7 +510,7 @@ function OrderCard({
   }
 
   return (
-    <div className={`rounded-xl border-2 ${config.border} ${config.bg} overflow-hidden transition-all shadow-sm hover:shadow-md ${isUpdating ? 'opacity-60 scale-[0.98]' : ''} ${isUrgent ? 'ring-2 ring-red-600 ring-offset-1' : ''}`}>
+    <div className={`rounded-xl ${isUrgent ? 'border-[3px] border-red-600' : `border-2 ${config.border}`} ${config.bg} overflow-hidden transition-all shadow-sm hover:shadow-md ${isUpdating ? 'opacity-60 scale-[0.98]' : ''}`}>
       {/* Header */}
       <div className={`${config.headerBg} ${config.headerText} px-3 py-2.5`}>
         <span className="text-[11px] font-black uppercase tracking-widest">{config.label}</span>
