@@ -93,7 +93,6 @@ export default function StaffDashboardPage() {
   const [orders, setOrders] = useState<Order[]>([])
   const [profiles, setProfiles] = useState<ProfileMap>({})
   const [loading, setLoading] = useState(true)
-  const [showReady, setShowReady] = useState(true)
   const [showCompleted, setShowCompleted] = useState(false)
   const [updatingIds, setUpdatingIds] = useState<Set<string>>(new Set())
   const { user, profile, loading: authLoading } = useAuthStore()
@@ -260,7 +259,7 @@ export default function StaffDashboardPage() {
   const readyOrders = activeOrders.filter(o => o.status === 'ready')
 
   return (
-    <div className="min-h-screen bg-secondary">
+    <div className="h-[100dvh] bg-secondary flex flex-col overflow-hidden">
       {/* Top bar */}
       <div className="bg-primary text-secondary px-4 sm:px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -339,89 +338,116 @@ export default function StaffDashboardPage() {
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-        {/* Status summary */}
-        <div className="grid grid-cols-3 gap-3 mb-6">
-          <div className="rounded-xl border-2 border-amber-300 bg-amber-50 px-4 py-3 text-center">
-            <p className="text-3xl font-black text-amber-800">{newOrders.length}</p>
-            <p className="text-xs font-bold text-amber-700 uppercase tracking-wider">New</p>
-          </div>
-          <div className="rounded-xl border-2 border-sky-300 bg-sky-50 px-4 py-3 text-center">
-            <p className="text-3xl font-black text-sky-800">{makingOrders.length}</p>
-            <p className="text-xs font-bold text-sky-700 uppercase tracking-wider">Making</p>
-          </div>
-          <div className="rounded-xl border-2 border-green-300 bg-green-50 px-4 py-3 text-center">
-            <p className="text-3xl font-black text-green-800">{readyOrders.length}</p>
-            <p className="text-xs font-bold text-green-700 uppercase tracking-wider">Ready</p>
-          </div>
-        </div>
-
-        {/* Active Orders (New + Making only) */}
+      <div className="flex-1 overflow-hidden flex flex-col">
+        {/* Kanban Board — horizontal scroll on mobile, 3-col grid on desktop */}
         {newOrders.length === 0 && makingOrders.length === 0 && readyOrders.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-2xl border border-secondary-dark/20">
-            <svg className="w-16 h-16 text-primary/20 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-            </svg>
-            <p className="text-accent text-lg">No active orders</p>
-            <p className="text-accent/60 text-sm mt-1">New orders will appear here in real time</p>
-          </div>
-        ) : (newOrders.length > 0 || makingOrders.length > 0) ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {[...newOrders, ...makingOrders]
-              .sort((a, b) => {
-                const priority: Record<string, number> = { pending: 0, confirmed: 0, preparing: 1 }
-                const pDiff = (priority[a.status] ?? 99) - (priority[b.status] ?? 99)
-                if (pDiff !== 0) return pDiff
-                return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-              })
-              .map(order => (
-                <OrderCard
-                  key={order.id}
-                  order={order}
-                  customerName={getCustomerName(order)}
-                  onUpdateStatus={updateStatus}
-                  isUpdating={updatingIds.has(order.id)}
-                />
-              ))}
-          </div>
-        ) : null}
-
-        {/* Ready for Pickup — collapsible section */}
-        {readyOrders.length > 0 && (
-          <div className="mt-6">
-            <button
-              onClick={() => setShowReady(!showReady)}
-              className="flex items-center gap-2 text-sm font-bold text-green-800 hover:text-green-900 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-green-600 rounded"
-            >
-              <svg className={`w-4 h-4 transition-transform ${showReady ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          <div className="flex-1 flex items-center justify-center px-4">
+            <div className="text-center py-20 bg-white rounded-2xl border border-secondary-dark/20 w-full max-w-md">
+              <svg className="w-16 h-16 text-primary/20 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
               </svg>
-              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-              Ready for Pickup ({readyOrders.length})
-            </button>
-
-            {showReady && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-4">
-                {readyOrders
-                  .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-                  .map(order => (
-                    <OrderCard
-                      key={order.id}
-                      order={order}
-                      customerName={getCustomerName(order)}
-                      onUpdateStatus={updateStatus}
-                      isUpdating={updatingIds.has(order.id)}
-                      readySince={readyTimestamps.current.get(order.id)}
-                    />
-                  ))}
+              <p className="text-accent text-lg">No active orders</p>
+              <p className="text-accent/60 text-sm mt-1">New orders will appear here in real time</p>
+            </div>
+          </div>
+        ) : (
+          <div className="flex-1 overflow-x-auto overflow-y-hidden snap-x snap-mandatory lg:snap-none">
+            <div className="flex lg:grid lg:grid-cols-3 gap-4 sm:gap-5 px-4 sm:px-6 py-4 min-h-0 h-full max-w-7xl mx-auto">
+              {/* ─── NEW Column ─── */}
+              <div className="flex-shrink-0 w-[85vw] sm:w-[60vw] lg:w-auto snap-center flex flex-col min-h-0">
+                <div className="flex items-center gap-2.5 mb-3 px-1">
+                  <div className="w-3 h-3 rounded-full bg-amber-500 shrink-0" />
+                  <h2 className="font-bold text-amber-800 text-sm uppercase tracking-wider">Queue</h2>
+                  <span className="bg-amber-100 text-amber-800 text-xs font-black px-2.5 py-0.5 rounded-full min-w-[1.75rem] text-center">
+                    {newOrders.length}
+                  </span>
+                </div>
+                <div className="flex-1 overflow-y-auto space-y-3 pb-4 scrollbar-thin">
+                  {newOrders
+                    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+                    .map(order => (
+                      <OrderCard
+                        key={order.id}
+                        order={order}
+                        customerName={getCustomerName(order)}
+                        onUpdateStatus={updateStatus}
+                        isUpdating={updatingIds.has(order.id)}
+                      />
+                    ))}
+                  {newOrders.length === 0 && (
+                    <div className="text-center py-12 text-accent/40">
+                      <p className="text-sm font-medium">Queue is clear</p>
+                    </div>
+                  )}
+                </div>
               </div>
-            )}
+
+              {/* ─── MAKING Column ─── */}
+              <div className="flex-shrink-0 w-[85vw] sm:w-[60vw] lg:w-auto snap-center flex flex-col min-h-0">
+                <div className="flex items-center gap-2.5 mb-3 px-1">
+                  <div className="w-3 h-3 rounded-full bg-sky-500 shrink-0 animate-pulse" />
+                  <h2 className="font-bold text-sky-800 text-sm uppercase tracking-wider">Making</h2>
+                  <span className="bg-sky-100 text-sky-800 text-xs font-black px-2.5 py-0.5 rounded-full min-w-[1.75rem] text-center">
+                    {makingOrders.length}
+                  </span>
+                </div>
+                <div className="flex-1 overflow-y-auto space-y-3 pb-4 scrollbar-thin">
+                  {makingOrders
+                    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+                    .map(order => (
+                      <OrderCard
+                        key={order.id}
+                        order={order}
+                        customerName={getCustomerName(order)}
+                        onUpdateStatus={updateStatus}
+                        isUpdating={updatingIds.has(order.id)}
+                      />
+                    ))}
+                  {makingOrders.length === 0 && (
+                    <div className="text-center py-12 text-accent/40">
+                      <p className="text-sm font-medium">Nothing in progress</p>
+                      <p className="text-xs mt-1">Tap &quot;Start Making&quot; on a queued order</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* ─── READY Column ─── */}
+              <div className="flex-shrink-0 w-[85vw] sm:w-[60vw] lg:w-auto snap-center flex flex-col min-h-0">
+                <div className="flex items-center gap-2.5 mb-3 px-1">
+                  <div className="w-3 h-3 rounded-full bg-green-500 shrink-0" />
+                  <h2 className="font-bold text-green-800 text-sm uppercase tracking-wider">Ready</h2>
+                  <span className="bg-green-100 text-green-800 text-xs font-black px-2.5 py-0.5 rounded-full min-w-[1.75rem] text-center">
+                    {readyOrders.length}
+                  </span>
+                </div>
+                <div className="flex-1 overflow-y-auto space-y-3 pb-4 scrollbar-thin">
+                  {readyOrders
+                    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+                    .map(order => (
+                      <OrderCard
+                        key={order.id}
+                        order={order}
+                        customerName={getCustomerName(order)}
+                        onUpdateStatus={updateStatus}
+                        isUpdating={updatingIds.has(order.id)}
+                        readySince={readyTimestamps.current.get(order.id)}
+                      />
+                    ))}
+                  {readyOrders.length === 0 && (
+                    <div className="text-center py-12 text-accent/40">
+                      <p className="text-sm font-medium">No pickups waiting</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
         {/* Completed orders toggle */}
         {completedOrders.length > 0 && (
-          <div className="mt-8">
+          <div className="border-t border-secondary-dark/20 px-4 sm:px-6 py-3 bg-secondary/80 max-w-7xl mx-auto w-full">
             <button
               onClick={() => setShowCompleted(!showCompleted)}
               className="flex items-center gap-2 text-sm text-stone-600 hover:text-primary font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-stone-400 rounded"
