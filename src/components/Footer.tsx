@@ -84,6 +84,15 @@ export default function Footer() {
               <Link href="/login" className="block text-secondary/80 hover:text-white transition-colors">
                 Sign In
               </Link>
+              <Link href="/terms" className="block text-secondary/80 hover:text-white transition-colors">
+                Terms of Service
+              </Link>
+              <Link href="/privacy" className="block text-secondary/80 hover:text-white transition-colors">
+                Privacy Policy
+              </Link>
+              <Link href="/refunds" className="block text-secondary/80 hover:text-white transition-colors">
+                Refund Policy
+              </Link>
             </nav>
           </div>
         </div>

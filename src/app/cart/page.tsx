@@ -12,11 +12,16 @@ export default function CartPage() {
   const { user, profile, setProfile } = useAuthStore()
   const [placing, setPlacing] = useState(false)
   const [error, setError] = useState('')
+  const [acceptedTerms, setAcceptedTerms] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
   const total = getTotal()
   const starsToEarn = Math.floor(total)
+
+  // Check if profile has required billing info
+  const hasBillingInfo = profile?.phone && profile?.billing_address_line1 && profile?.billing_city && profile?.billing_state && profile?.billing_zip
+  const hasName = profile?.first_name && profile?.last_name
 
   async function handlePlaceOrder() {
     if (!user) {
@@ -24,8 +29,26 @@ export default function CartPage() {
       return
     }
 
+    if (!acceptedTerms) {
+      setError('Please accept the Terms of Service and Privacy Policy to continue.')
+      return
+    }
+
+    if (!hasName || !hasBillingInfo) {
+      setError('Please complete your profile with billing information before placing an order.')
+      return
+    }
+
     setPlacing(true)
     setError('')
+
+    // Record terms acceptance if not already done
+    if (profile && !profile.accepted_terms_at) {
+      await supabase
+        .from('profiles')
+        .update({ accepted_terms_at: new Date().toISOString() })
+        .eq('id', user.id)
+    }
 
     const orderItems = items.map(item => ({
       menu_item_id: item.menu_item.id,
@@ -106,6 +129,7 @@ export default function CartPage() {
         <div className="bg-red-50 text-red-700 px-4 py-3 rounded-lg text-sm mb-6">{error}</div>
       )}
 
+      {/* Cart Items */}
       <div className="space-y-4 mb-8">
         {items.map(item => (
           <div key={item.id} className="bg-white rounded-xl border border-secondary-dark/20 p-5">
@@ -158,6 +182,64 @@ export default function CartPage() {
         ))}
       </div>
 
+      {/* Billing Info Check */}
+      {user && (!hasName || !hasBillingInfo) && (
+        <div className="bg-amber-50 border-2 border-amber-300 rounded-xl p-5 mb-6">
+          <div className="flex items-start gap-3">
+            <svg className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+            <div>
+              <p className="font-bold text-amber-800 text-sm">Billing information required</p>
+              <p className="text-amber-700 text-sm mt-1">
+                Please complete your name, phone, and billing address before placing an order.
+              </p>
+              <Link
+                href="/profile"
+                className="inline-block mt-3 bg-amber-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-amber-700 transition-colors"
+              >
+                Complete Profile
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Method — placeholder for future payment provider */}
+      {user && hasName && hasBillingInfo && (
+        <div className="bg-white rounded-xl border border-secondary-dark/20 p-6 mb-6">
+          <h2 className="font-semibold text-primary text-lg mb-4">Payment Method</h2>
+
+          {/* Card input placeholder — will be replaced by Stripe/Square Elements */}
+          <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center bg-gray-50">
+            <svg className="w-10 h-10 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+            </svg>
+            <p className="text-sm font-semibold text-gray-500">Credit card payment coming soon</p>
+            <p className="text-xs text-gray-400 mt-1">Payment will be collected at pickup for now</p>
+          </div>
+
+          {/* Billing summary from profile */}
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Billing Address</p>
+            <p className="text-sm text-gray-700">
+              {profile?.first_name} {profile?.last_name}
+            </p>
+            <p className="text-sm text-gray-600">
+              {profile?.billing_address_line1}
+              {profile?.billing_address_line2 && `, ${profile.billing_address_line2}`}
+            </p>
+            <p className="text-sm text-gray-600">
+              {profile?.billing_city}, {profile?.billing_state} {profile?.billing_zip}
+            </p>
+            <p className="text-sm text-gray-600">{profile?.phone}</p>
+            <Link href="/profile" className="text-xs text-primary font-medium hover:underline mt-1 inline-block">
+              Edit billing info
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* Order Summary */}
       <div className="bg-white rounded-xl border border-secondary-dark/20 p-6">
         <h2 className="font-semibold text-primary text-lg mb-4">Order Summary</h2>
@@ -182,10 +264,29 @@ export default function CartPage() {
           )}
         </div>
 
+        {/* Terms acceptance */}
+        {user && (
+          <label className="flex items-start gap-3 mt-5 pt-4 border-t border-gray-100 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={acceptedTerms}
+              onChange={(e) => setAcceptedTerms(e.target.checked)}
+              className="mt-0.5 w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+            />
+            <span className="text-xs text-gray-500 leading-relaxed">
+              I agree to the{' '}
+              <Link href="/terms" className="text-primary underline font-medium" target="_blank">Terms of Service</Link>,{' '}
+              <Link href="/privacy" className="text-primary underline font-medium" target="_blank">Privacy Policy</Link>, and{' '}
+              <Link href="/refunds" className="text-primary underline font-medium" target="_blank">Refund Policy</Link>.
+              I authorize Moonbeam Cafe to charge the total amount shown above.
+            </span>
+          </label>
+        )}
+
         <button
           onClick={handlePlaceOrder}
-          disabled={placing}
-          className="w-full mt-6 bg-primary text-secondary py-3 rounded-lg font-semibold hover:bg-primary-light transition-colors disabled:opacity-50 text-lg"
+          disabled={placing || (user ? !acceptedTerms || !hasName || !hasBillingInfo : false)}
+          className="w-full mt-6 bg-primary text-secondary py-3.5 rounded-xl font-bold hover:bg-primary-light transition-colors disabled:opacity-50 text-lg shadow-md shadow-primary/15"
         >
           {placing ? 'Placing Order...' : user ? 'Place Order' : 'Sign In to Order'}
         </button>
@@ -194,6 +295,17 @@ export default function CartPage() {
           <p className="text-center text-xs text-accent mt-2">
             You need to be signed in to place an order
           </p>
+        )}
+
+        {user && (
+          <div className="flex items-center justify-center gap-4 mt-4">
+            <svg className="w-5 h-3 text-gray-400" viewBox="0 0 38 24" fill="none"><rect width="38" height="24" rx="4" fill="currentColor" opacity="0.15"/><text x="19" y="15" textAnchor="middle" fill="currentColor" fontSize="8" fontWeight="bold">VISA</text></svg>
+            <svg className="w-5 h-3 text-gray-400" viewBox="0 0 38 24" fill="none"><rect width="38" height="24" rx="4" fill="currentColor" opacity="0.15"/><text x="19" y="15" textAnchor="middle" fill="currentColor" fontSize="7" fontWeight="bold">MC</text></svg>
+            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            <span className="text-xs text-gray-400">Secure checkout</span>
+          </div>
         )}
       </div>
 
