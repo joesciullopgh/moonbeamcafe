@@ -352,9 +352,9 @@ export default function StaffDashboardPage() {
           </div>
         ) : (
           <div className="flex-1 overflow-x-auto overflow-y-hidden snap-x snap-mandatory lg:snap-none">
-            <div className="flex lg:grid lg:grid-cols-3 gap-4 sm:gap-5 px-4 sm:px-6 py-4 min-h-0 h-full max-w-7xl mx-auto">
+            <div className="flex lg:grid lg:grid-cols-3 gap-3 sm:gap-5 px-3 sm:px-6 py-3 sm:py-4 min-h-0 h-full max-w-7xl mx-auto">
               {/* ─── NEW Column ─── */}
-              <div className="flex-shrink-0 w-[85vw] sm:w-[60vw] lg:w-auto snap-center flex flex-col min-h-0">
+              <div className="flex-shrink-0 w-[calc(100vw-1.5rem)] sm:w-[60vw] lg:w-auto snap-center flex flex-col min-h-0">
                 <div className="flex items-center gap-2.5 mb-3 px-1">
                   <div className="w-3 h-3 rounded-full bg-amber-500 shrink-0" />
                   <h2 className="font-bold text-amber-800 text-sm uppercase tracking-wider">Queue</h2>
@@ -383,7 +383,7 @@ export default function StaffDashboardPage() {
               </div>
 
               {/* ─── MAKING Column ─── */}
-              <div className="flex-shrink-0 w-[85vw] sm:w-[60vw] lg:w-auto snap-center flex flex-col min-h-0">
+              <div className="flex-shrink-0 w-[calc(100vw-1.5rem)] sm:w-[60vw] lg:w-auto snap-center flex flex-col min-h-0">
                 <div className="flex items-center gap-2.5 mb-3 px-1">
                   <div className="w-3 h-3 rounded-full bg-sky-500 shrink-0 animate-pulse" />
                   <h2 className="font-bold text-sky-800 text-sm uppercase tracking-wider">Making</h2>
@@ -413,7 +413,7 @@ export default function StaffDashboardPage() {
               </div>
 
               {/* ─── READY Column ─── */}
-              <div className="flex-shrink-0 w-[85vw] sm:w-[60vw] lg:w-auto snap-center flex flex-col min-h-0">
+              <div className="flex-shrink-0 w-[calc(100vw-1.5rem)] sm:w-[60vw] lg:w-auto snap-center flex flex-col min-h-0">
                 <div className="flex items-center gap-2.5 mb-3 px-1">
                   <div className="w-3 h-3 rounded-full bg-green-500 shrink-0" />
                   <h2 className="font-bold text-green-800 text-sm uppercase tracking-wider">Ready</h2>
@@ -510,16 +510,16 @@ function OrderCard({
   }
 
   return (
-    <div className={`rounded-2xl border-2 ${config.border} ${config.bg} overflow-hidden transition-all shadow-sm hover:shadow-md ${isUpdating ? 'opacity-60 scale-[0.98]' : ''} ${isUrgent ? 'ring-2 ring-red-600 ring-offset-2' : ''}`}>
+    <div className={`rounded-xl border-2 ${config.border} ${config.bg} overflow-hidden transition-all shadow-sm hover:shadow-md ${isUpdating ? 'opacity-60 scale-[0.98]' : ''} ${isUrgent ? 'ring-2 ring-red-600 ring-offset-1' : ''}`}>
       {/* Header */}
-      <div className={`${config.headerBg} ${config.headerText} px-4 py-3`}>
-        <span className="text-xs font-black uppercase tracking-widest">{config.label}</span>
-        <p className="text-lg font-black mt-1 leading-tight truncate">{customerName}</p>
+      <div className={`${config.headerBg} ${config.headerText} px-3 py-2.5`}>
+        <span className="text-[11px] font-black uppercase tracking-widest">{config.label}</span>
+        <p className="text-base font-black mt-0.5 leading-tight truncate">{customerName}</p>
       </div>
 
       {/* Time */}
-      <div className={`px-4 py-2.5 flex items-center gap-2 border-b ${isUrgent ? 'bg-red-50 border-red-200' : 'bg-secondary border-secondary-dark/10'}`}>
-        <svg className={`w-4 h-4 shrink-0 ${isUrgent ? 'text-red-500' : 'text-accent/50'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className={`px-3 py-2 flex items-center gap-2 border-b ${isUrgent ? 'bg-red-50 border-red-200' : 'bg-secondary border-secondary-dark/10'}`}>
+        <svg className={`w-3.5 h-3.5 shrink-0 ${isUrgent ? 'text-red-500' : 'text-accent/50'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
         <span className={`text-sm font-bold ${isUrgent ? 'text-red-600' : 'text-text-dark'}`}>{timeSince}</span>
@@ -527,11 +527,11 @@ function OrderCard({
       </div>
 
       {/* Items */}
-      <div className="px-4 py-3">
-        <div className="space-y-2">
+      <div className="px-3 py-2.5">
+        <div className="space-y-1.5">
           {items.map((item, i) => (
-            <div key={i} className="flex items-start gap-2.5">
-              <span className="bg-primary text-secondary text-xs font-black w-6 h-6 rounded-md flex items-center justify-center shrink-0 mt-0.5">
+            <div key={i} className="flex items-start gap-2">
+              <span className="bg-primary text-secondary text-xs font-black w-5.5 h-5.5 rounded flex items-center justify-center shrink-0 mt-0.5" style={{ width: '1.375rem', height: '1.375rem' }}>
                 {item.quantity || 1}
               </span>
               <div className="flex-1 min-w-0">
@@ -542,7 +542,7 @@ function OrderCard({
                   </p>
                 )}
                 {item.special_instructions && (
-                  <div className="text-xs font-bold text-primary bg-primary/10 rounded-md px-2 py-1 mt-1 leading-tight">
+                  <div className="text-xs font-bold text-primary bg-primary/10 rounded px-1.5 py-0.5 mt-1 leading-tight">
                     NOTE: {item.special_instructions}
                   </div>
                 )}
@@ -553,7 +553,7 @@ function OrderCard({
       </div>
 
       {/* Total */}
-      <div className="px-4 py-2 border-t border-secondary-dark/10 flex items-center justify-between bg-secondary/50">
+      <div className="px-3 py-1.5 border-t border-secondary-dark/10 flex items-center justify-between bg-secondary/50">
         <span className="text-sm font-semibold text-accent">
           {items.reduce((sum, it) => sum + (it.quantity || 1), 0)} item{items.reduce((sum, it) => sum + (it.quantity || 1), 0) !== 1 ? 's' : ''}
         </span>
@@ -561,20 +561,20 @@ function OrderCard({
       </div>
 
       {/* Actions */}
-      <div className="px-4 pb-4 pt-3 space-y-2">
+      <div className="px-3 pb-3 pt-2.5 space-y-1.5">
         {isNew && (
           <div className="flex gap-2">
             <button
               onClick={() => onUpdateStatus(order.id, 'preparing')}
               disabled={isUpdating}
-              className="flex-1 py-3.5 rounded-xl text-sm font-black transition-all disabled:opacity-50 bg-primary hover:bg-primary-light text-secondary shadow-lg shadow-primary/20 active:scale-[0.97] outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
+              className="flex-1 py-3 rounded-lg text-sm font-black transition-all disabled:opacity-50 bg-primary hover:bg-primary-light text-secondary shadow-lg shadow-primary/20 active:scale-[0.97] outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
             >
               {isUpdating ? 'Updating...' : 'Start Making'}
             </button>
             <button
               onClick={() => onUpdateStatus(order.id, 'cancelled')}
               disabled={isUpdating}
-              className="px-4 py-3.5 rounded-xl text-sm font-bold text-red-700 bg-red-50 border border-red-300 hover:bg-red-100 transition-colors disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-red-600"
+              className="px-3 py-3 rounded-lg text-sm font-bold text-red-700 bg-red-50 border border-red-300 hover:bg-red-100 transition-colors disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-red-600"
             >
               Cancel
             </button>
@@ -586,14 +586,14 @@ function OrderCard({
             <button
               onClick={() => onUpdateStatus(order.id, 'ready')}
               disabled={isUpdating}
-              className="w-full py-3.5 rounded-xl text-sm font-black transition-all disabled:opacity-50 bg-green-700 hover:bg-green-800 text-white shadow-lg shadow-green-700/20 active:scale-[0.97] outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-green-600"
+              className="w-full py-3 rounded-lg text-sm font-black transition-all disabled:opacity-50 bg-green-700 hover:bg-green-800 text-white shadow-lg shadow-green-700/20 active:scale-[0.97] outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-green-600"
             >
               {isUpdating ? 'Updating...' : 'Mark Ready for Pickup'}
             </button>
             <button
               onClick={() => onUpdateStatus(order.id, 'pending')}
               disabled={isUpdating}
-              className="w-full py-2 rounded-xl text-xs font-bold text-stone-600 hover:text-primary hover:bg-stone-100 transition-colors disabled:opacity-50 flex items-center justify-center gap-1 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-stone-400"
+              className="w-full py-1.5 rounded-lg text-xs font-bold text-stone-600 hover:text-primary hover:bg-stone-100 transition-colors disabled:opacity-50 flex items-center justify-center gap-1 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-stone-400"
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
@@ -605,8 +605,8 @@ function OrderCard({
 
         {isReady && (
           <>
-            <div className="text-center py-1.5 space-y-1">
-              <span className="text-green-800 font-bold text-sm block">Waiting for customer pickup</span>
+            <div className="text-center py-1 space-y-0.5">
+              <span className="text-green-800 font-bold text-sm block">Waiting for pickup</span>
               {readySince && (
                 <span className="text-xs text-stone-500 block">
                   Auto-completes in {readyMinLeft > 0 ? `${readyMinLeft} min` : 'moments'}
@@ -616,7 +616,7 @@ function OrderCard({
             <button
               onClick={() => onUpdateStatus(order.id, 'preparing')}
               disabled={isUpdating}
-              className="w-full py-2 rounded-xl text-xs font-bold text-stone-600 hover:text-primary hover:bg-stone-100 transition-colors disabled:opacity-50 flex items-center justify-center gap-1 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-stone-400"
+              className="w-full py-1.5 rounded-lg text-xs font-bold text-stone-600 hover:text-primary hover:bg-stone-100 transition-colors disabled:opacity-50 flex items-center justify-center gap-1 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-stone-400"
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
@@ -630,7 +630,7 @@ function OrderCard({
           <button
             onClick={() => onUpdateStatus(order.id, 'pending')}
             disabled={isUpdating}
-            className="w-full py-2 rounded-xl text-xs font-bold text-stone-600 hover:text-primary hover:bg-stone-100 transition-colors disabled:opacity-50 flex items-center justify-center gap-1 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-stone-400"
+            className="w-full py-1.5 rounded-lg text-xs font-bold text-stone-600 hover:text-primary hover:bg-stone-100 transition-colors disabled:opacity-50 flex items-center justify-center gap-1 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-stone-400"
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
