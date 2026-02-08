@@ -7,6 +7,17 @@ import { createClient } from '@/lib/supabase/client'
 import { useStoreSettings } from '@/stores/store-settings'
 import type { MenuItem } from '@/lib/types/database'
 
+const GOOGLE_PHOTOS_URL = 'https://share.google/QpQgYb0Vfhhg8ls84'
+
+const GALLERY_IMAGES = [
+  '/storefront.jpg',
+  '/gallery/1.jpg',
+  '/gallery/2.jpg',
+  '/gallery/3.jpg',
+  '/gallery/4.jpg',
+  '/gallery/5.jpg',
+]
+
 const SIGNATURE_NAMES = [
   'Moonbeam Signature Latte',
   'Honey Cinnamon Latte',
@@ -57,10 +68,18 @@ export default function Home() {
     <div>
       {/* ===== HERO SECTION ===== */}
       <section className="relative h-[90vh] min-h-[600px] max-h-[900px] overflow-hidden">
-        {/* Rich SVG background */}
+        {/* SVG base layer */}
         <Image src="/hero-bg.svg" alt="" fill className="object-cover" priority />
-        {/* Animated gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#3d4a2d]/80" />
+        {/* Storefront photo overlay — subtle and transparent */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/storefront.jpg"
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover opacity-25"
+          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+        />
+        {/* Warm gradient overlay for text readability */}
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/20 via-primary/40 to-primary/80" />
         {/* Content */}
         <div className="relative h-full flex flex-col items-center justify-center text-center px-4">
           {/* Moonbeam glow effect */}
@@ -273,6 +292,40 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ===== PHOTO GALLERY / SLIDESHOW ===== */}
+      <section className="py-20 sm:py-24 bg-white relative overflow-hidden">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative">
+          <div className="text-center mb-14">
+            <span className="inline-block text-xs font-bold uppercase tracking-[0.2em] text-accent mb-3">Gallery</span>
+            <h2 className="text-3xl sm:text-4xl font-bold text-primary mb-4">
+              Inside Moonbeam
+            </h2>
+            <p className="text-accent max-w-2xl mx-auto leading-relaxed">
+              Take a peek inside our cozy corner of the neighborhood
+            </p>
+          </div>
+
+          <PhotoSlideshow />
+
+          <div className="text-center mt-10">
+            <a
+              href={GOOGLE_PHOTOS_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group inline-flex items-center gap-3 bg-primary text-secondary px-8 py-4 rounded-full font-semibold text-lg hover:bg-primary-light transition-all shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              View Full Gallery
+              <svg className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+            </a>
+          </div>
+        </div>
+      </section>
+
       {/* ===== REWARDS CTA ===== */}
       <section className="py-20 sm:py-24 bg-white relative overflow-hidden">
         <div className="absolute inset-0 opacity-[0.02]" style={{ backgroundImage: 'radial-gradient(#3d4a2d 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
@@ -434,6 +487,81 @@ function DrinkCard({ name, price, description, accent }: {
         </div>
       </div>
     </Link>
+  )
+}
+
+function PhotoSlideshow() {
+  const [active, setActive] = useState(0)
+  const [loaded, setLoaded] = useState<string[]>([])
+
+  // Preload images and track which ones exist
+  useEffect(() => {
+    const results: string[] = []
+    let done = 0
+    GALLERY_IMAGES.forEach((src) => {
+      const img = new window.Image()
+      img.onload = () => {
+        results.push(src)
+        done++
+        if (done === GALLERY_IMAGES.length) setLoaded([...results])
+      }
+      img.onerror = () => {
+        done++
+        if (done === GALLERY_IMAGES.length) setLoaded([...results])
+      }
+      img.src = src
+    })
+  }, [])
+
+  // Auto-advance every 5 seconds
+  useEffect(() => {
+    if (loaded.length <= 1) return
+    const timer = setInterval(() => {
+      setActive((prev) => (prev + 1) % loaded.length)
+    }, 5000)
+    return () => clearInterval(timer)
+  }, [loaded.length])
+
+  if (loaded.length === 0) {
+    return (
+      <div className="relative aspect-[21/9] rounded-2xl overflow-hidden bg-gradient-to-br from-secondary to-secondary-dark/30 flex items-center justify-center">
+        <div className="text-center">
+          <svg className="w-16 h-16 text-primary/20 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          <p className="text-accent/60 text-sm">Photo gallery coming soon</p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="relative aspect-[21/9] rounded-2xl overflow-hidden shadow-2xl shadow-primary/10">
+      {loaded.map((src, i) => (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          key={src}
+          src={src}
+          alt={`Moonbeam Cafe photo ${i + 1}`}
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out ${i === active ? 'opacity-100' : 'opacity-0'}`}
+        />
+      ))}
+      {/* Subtle gradient at bottom for dots visibility */}
+      <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/30 to-transparent pointer-events-none" />
+      {/* Navigation dots */}
+      {loaded.length > 1 && (
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+          {loaded.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setActive(i)}
+              className={`h-2 rounded-full transition-all duration-300 ${i === active ? 'bg-white w-8' : 'bg-white/50 w-2 hover:bg-white/70'}`}
+              aria-label={`View photo ${i + 1}`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
   )
 }
 
