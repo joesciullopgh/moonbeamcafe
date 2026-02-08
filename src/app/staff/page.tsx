@@ -410,7 +410,7 @@ export default function StaffDashboardPage() {
           </div>
         ) : (
           <div className="flex-1 overflow-x-auto overflow-y-hidden snap-x snap-mandatory lg:snap-none">
-            <div className="flex lg:grid lg:grid-cols-3 gap-3 sm:gap-5 px-3 sm:px-6 py-3 sm:py-4 min-h-0 h-full max-w-7xl mx-auto">
+            <div className="flex lg:grid lg:grid-cols-3 gap-3 sm:gap-5 pl-3 pr-8 sm:px-6 py-3 sm:py-4 min-h-0 h-full max-w-7xl mx-auto">
               {/* ─── NEW Column ─── */}
               <div className="flex-shrink-0 w-[calc(100vw-2.5rem)] sm:w-[60vw] lg:w-auto snap-center flex flex-col min-h-0">
                 <div className="flex items-center gap-2.5 mb-3">
@@ -499,6 +499,7 @@ export default function StaffDashboardPage() {
                   )}
                 </div>
               </div>
+
             </div>
           </div>
         )}
