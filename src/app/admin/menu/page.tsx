@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { MENU_CATEGORIES, MENU_ITEMS } from '@/lib/menu-data'
 import type { MenuItem } from '@/lib/types/database'
@@ -16,7 +16,7 @@ export default function AdminMenuPage() {
   const { profile } = useAuthStore()
   const supabase = useMemo(() => createClient(), [])
 
-  async function fetchMenu() {
+  const fetchMenu = useCallback(async () => {
     const { data } = await supabase
       .from('menu_items')
       .select('*')
@@ -24,11 +24,11 @@ export default function AdminMenuPage() {
       .order('name')
     setMenuItems(data || [])
     setLoading(false)
-  }
+  }, [supabase])
 
   useEffect(() => {
     fetchMenu()
-  }, [])
+  }, [fetchMenu])
 
   async function seedMenu() {
     setSeeding(true)
@@ -88,6 +88,16 @@ export default function AdminMenuPage() {
     }
   }
 
+  function openForm(item: MenuItem | null) {
+    setEditingItem(item)
+    setShowForm(true)
+  }
+
+  function closeForm() {
+    setShowForm(false)
+    setEditingItem(null)
+  }
+
   if (profile?.role !== 'admin') {
     return <div className="text-accent">Only admins can manage the menu.</div>
   }
@@ -111,28 +121,13 @@ export default function AdminMenuPage() {
             </button>
           )}
           <button
-            onClick={() => { setEditingItem(null); setShowForm(true) }}
+            onClick={() => openForm(null)}
             className="bg-primary text-secondary px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-light transition-colors"
           >
             + Add Item
           </button>
         </div>
       </div>
-
-      {showForm && (
-        <MenuItemForm
-          item={editingItem}
-          onSave={async () => {
-            setShowForm(false)
-            setEditingItem(null)
-            await fetchMenu()
-          }}
-          onCancel={() => {
-            setShowForm(false)
-            setEditingItem(null)
-          }}
-        />
-      )}
 
       {/* Menu items table */}
       <div className="bg-white rounded-xl border border-secondary-dark/20 overflow-hidden">
@@ -151,7 +146,11 @@ export default function AdminMenuPage() {
             </thead>
             <tbody className="divide-y divide-secondary-dark/10">
               {menuItems.map(item => (
-                <tr key={item.id} className="hover:bg-primary/5">
+                <tr
+                  key={item.id}
+                  className="hover:bg-primary/5 cursor-pointer"
+                  onClick={() => openForm(item)}
+                >
                   <td className="px-4 py-3">
                     {item.image_url ? (
                       /* eslint-disable-next-line @next/next/no-img-element */
@@ -171,12 +170,12 @@ export default function AdminMenuPage() {
                   <td className="px-4 py-3">
                     <div>
                       <p className="font-medium text-text-dark">{item.name}</p>
-                      <p className="text-xs text-accent mt-0.5 hidden sm:block">{item.description}</p>
+                      <p className="text-xs text-accent mt-0.5 hidden sm:block line-clamp-1">{item.description}</p>
                     </div>
                   </td>
                   <td className="px-4 py-3 text-accent hidden md:table-cell">{item.category}</td>
                   <td className="px-4 py-3 text-accent">${item.price.toFixed(2)}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                     <button
                       onClick={() => toggleAvailability(item)}
                       className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -188,7 +187,7 @@ export default function AdminMenuPage() {
                       {item.is_available ? 'Available' : 'Unavailable'}
                     </button>
                   </td>
-                  <td className="px-4 py-3 text-center">
+                  <td className="px-4 py-3 text-center" onClick={e => e.stopPropagation()}>
                     <button
                       onClick={() => toggleFeatured(item)}
                       className={`text-xl transition-colors ${
@@ -201,10 +200,10 @@ export default function AdminMenuPage() {
                       {item.is_featured ? '★' : '☆'}
                     </button>
                   </td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-4 py-3 text-right" onClick={e => e.stopPropagation()}>
                     <div className="flex gap-2 justify-end">
                       <button
-                        onClick={() => { setEditingItem(item); setShowForm(true) }}
+                        onClick={() => openForm(item)}
                         className="text-primary hover:text-primary-light text-sm font-medium"
                       >
                         Edit
@@ -230,11 +229,23 @@ export default function AdminMenuPage() {
           </table>
         </div>
       </div>
+
+      {/* Modal */}
+      {showForm && (
+        <MenuItemModal
+          item={editingItem}
+          onSave={async () => {
+            closeForm()
+            await fetchMenu()
+          }}
+          onCancel={closeForm}
+        />
+      )}
     </div>
   )
 }
 
-function MenuItemForm({
+function MenuItemModal({
   item,
   onSave,
   onCancel,
@@ -259,25 +270,33 @@ function MenuItemForm({
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const formRef = useRef<HTMLDivElement>(null)
+  const backdropRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
 
-  // Scroll form into view when it opens
+  // Lock body scroll while modal is open
   useEffect(() => {
-    formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
   }, [])
+
+  // Close on Escape key
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') onCancel()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onCancel])
 
   function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       setError('Please select an image file (JPG, PNG, WebP)')
       return
     }
 
-    // Validate size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
       setError('Image must be under 5MB')
       return
@@ -286,7 +305,6 @@ function MenuItemForm({
     setImageFile(file)
     setError('')
 
-    // Create preview
     const reader = new FileReader()
     reader.onload = (ev) => {
       setImagePreview(ev.target?.result as string)
@@ -315,7 +333,6 @@ function MenuItemForm({
       return
     }
 
-    // Upload image if a new file was selected
     let finalImageUrl = imageUrl
     if (imageFile) {
       setUploading(true)
@@ -326,14 +343,12 @@ function MenuItemForm({
         setSaving(false)
         return
       }
-      // Delete old image if replacing
       if (item?.image_url) {
         await deleteMenuImage(item.image_url)
       }
       finalImageUrl = url
     }
 
-    // If image was removed (had one before, now cleared)
     if (!imagePreview && item?.image_url) {
       await deleteMenuImage(item.image_url)
       finalImageUrl = ''
@@ -368,200 +383,222 @@ function MenuItemForm({
   }
 
   return (
-    <div ref={formRef} className="bg-white rounded-xl border border-secondary-dark/20 p-6 mb-6">
-      <h2 className="text-xl font-bold text-primary mb-4">
-        {item ? 'Edit Item' : 'New Item'}
-      </h2>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {error && (
-          <div className="bg-red-50 text-red-700 px-4 py-3 rounded-lg text-sm">{error}</div>
-        )}
+    <div className="fixed inset-0 z-50 flex items-start justify-center sm:items-center p-0 sm:p-4">
+      {/* Backdrop */}
+      <div
+        ref={backdropRef}
+        className="fixed inset-0 bg-black/50 transition-opacity"
+        onClick={onCancel}
+      />
 
-        {/* Image Upload */}
-        <div>
-          <label className="block text-sm font-medium text-text-dark mb-2">Product Photo</label>
-          <div className="flex items-start gap-4">
-            {/* Preview */}
-            <div className="flex-shrink-0">
-              {imagePreview ? (
-                <div className="relative group">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={imagePreview}
-                    alt="Preview"
-                    className="w-[120px] h-[120px] rounded-xl object-cover border border-secondary-dark/20"
-                  />
-                  <button
-                    type="button"
-                    onClick={removeImage}
-                    className="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs hover:bg-red-600 shadow-sm"
-                  >
-                    &times;
-                  </button>
-                </div>
-              ) : (
-                <div
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-[120px] h-[120px] rounded-xl border-2 border-dashed border-secondary-dark/30 flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 transition-colors"
-                >
-                  <svg className="w-8 h-8 text-accent/40 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  <span className="text-xs text-accent/60">Add photo</span>
-                </div>
-              )}
-            </div>
-
-            {/* Upload controls */}
-            <div className="flex-1">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                onChange={handleFileSelect}
-                className="hidden"
-              />
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="bg-secondary text-primary px-4 py-2 rounded-lg text-sm font-medium hover:bg-secondary-dark transition-colors"
-              >
-                {imagePreview ? 'Change Photo' : 'Upload Photo'}
-              </button>
-              <p className="text-xs text-accent mt-2">
-                JPG, PNG, or WebP. Max 5MB. Square images work best.
-              </p>
-              {uploading && (
-                <p className="text-xs text-primary mt-1 font-medium">Uploading...</p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-text-dark mb-1">Name</label>
-            <input
-              required
-              value={name}
-              onChange={e => setName(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-text-dark mb-1">Category</label>
-            <select
-              value={category}
-              onChange={e => setCategory(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none text-sm"
-            >
-              {MENU_CATEGORIES.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-text-dark mb-1">Description</label>
-          <textarea
-            value={description}
-            onChange={e => setDescription(e.target.value)}
-            rows={2}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none text-sm"
-          />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-text-dark mb-1">Price ($)</label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              required
-              value={price}
-              onChange={e => setPrice(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none text-sm"
-            />
-          </div>
-          <div className="flex items-end">
-            <label className="flex items-center gap-2 pb-2">
-              <input
-                type="checkbox"
-                checked={customizable}
-                onChange={e => setCustomizable(e.target.checked)}
-                className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
-              />
-              <span className="text-sm text-text-dark">Customizable</span>
-            </label>
-          </div>
-          <div className="flex items-end">
-            <label className="flex items-center gap-2 pb-2">
-              <input
-                type="checkbox"
-                checked={isAvailable}
-                onChange={e => setIsAvailable(e.target.checked)}
-                className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
-              />
-              <span className="text-sm text-text-dark">Available</span>
-            </label>
-          </div>
-        </div>
-
-        {/* Featured Section */}
-        <div className="border-t border-secondary-dark/10 pt-4 mt-2">
-          <label className="flex items-center gap-2 mb-3">
-            <input
-              type="checkbox"
-              checked={isFeatured}
-              onChange={e => setIsFeatured(e.target.checked)}
-              className="w-4 h-4 text-amber-500 border-gray-300 rounded focus:ring-amber-500"
-            />
-            <span className="text-sm font-medium text-text-dark">★ Feature on Homepage</span>
-          </label>
-          {isFeatured && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ml-6">
-              <div>
-                <label className="block text-sm font-medium text-text-dark mb-1">Tagline</label>
-                <input
-                  value={featuredTagline}
-                  onChange={e => setFeaturedTagline(e.target.value)}
-                  placeholder="e.g. Our most loved creation"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none text-sm"
-                />
-                <p className="text-xs text-accent mt-1">Short marketing tagline for the homepage card</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-text-dark mb-1">Display Order</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={featuredOrder}
-                  onChange={e => setFeaturedOrder(e.target.value)}
-                  className="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none text-sm"
-                />
-                <p className="text-xs text-accent mt-1">Lower numbers appear first</p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="flex gap-3 pt-2">
-          <button
-            type="submit"
-            disabled={saving}
-            className="bg-primary text-secondary px-6 py-2 rounded-lg text-sm font-medium hover:bg-primary-light transition-colors disabled:opacity-50"
-          >
-            {uploading ? 'Uploading image...' : saving ? 'Saving...' : (item ? 'Update Item' : 'Add Item')}
-          </button>
+      {/* Modal panel */}
+      <div className="relative bg-white w-full sm:max-w-2xl sm:rounded-2xl shadow-2xl max-h-[100dvh] sm:max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="sticky top-0 z-10 bg-white border-b border-secondary-dark/10 px-6 py-4 flex items-center justify-between">
+          <h2 className="text-xl font-bold text-primary">
+            {item ? 'Edit Item' : 'New Item'}
+          </h2>
           <button
             type="button"
             onClick={onCancel}
-            className="bg-gray-100 text-gray-700 px-6 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-accent hover:bg-gray-100 transition-colors text-lg"
           >
-            Cancel
+            &times;
           </button>
         </div>
-      </form>
+
+        {/* Body */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          {error && (
+            <div className="bg-red-50 text-red-700 px-4 py-3 rounded-lg text-sm">{error}</div>
+          )}
+
+          {/* Image Upload */}
+          <div>
+            <label className="block text-sm font-medium text-text-dark mb-2">Product Photo</label>
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0">
+                {imagePreview ? (
+                  <div className="relative group">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      className="w-[100px] h-[100px] rounded-xl object-cover border border-secondary-dark/20"
+                    />
+                    <button
+                      type="button"
+                      onClick={removeImage}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs hover:bg-red-600 shadow-sm"
+                    >
+                      &times;
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-[100px] h-[100px] rounded-xl border-2 border-dashed border-secondary-dark/30 flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 transition-colors"
+                  >
+                    <svg className="w-7 h-7 text-accent/40 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span className="text-xs text-accent/60">Add photo</span>
+                  </div>
+                )}
+              </div>
+              <div className="flex-1">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="bg-secondary text-primary px-4 py-2 rounded-lg text-sm font-medium hover:bg-secondary-dark transition-colors"
+                >
+                  {imagePreview ? 'Change Photo' : 'Upload Photo'}
+                </button>
+                <p className="text-xs text-accent mt-2">
+                  JPG, PNG, or WebP. Max 5MB.
+                </p>
+                {uploading && (
+                  <p className="text-xs text-primary mt-1 font-medium">Uploading...</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-text-dark mb-1">Name</label>
+              <input
+                required
+                value={name}
+                onChange={e => setName(e.target.value)}
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-text-dark mb-1">Category</label>
+              <select
+                value={category}
+                onChange={e => setCategory(e.target.value)}
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none text-sm"
+              >
+                {MENU_CATEGORIES.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-text-dark mb-1">Description</label>
+            <textarea
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              rows={2}
+              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none text-sm"
+            />
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-text-dark mb-1">Price ($)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                required
+                value={price}
+                onChange={e => setPrice(e.target.value)}
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none text-sm"
+              />
+            </div>
+            <div className="flex items-end pb-1">
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={customizable}
+                  onChange={e => setCustomizable(e.target.checked)}
+                  className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+                />
+                <span className="text-sm text-text-dark">Customizable</span>
+              </label>
+            </div>
+            <div className="flex items-end pb-1">
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={isAvailable}
+                  onChange={e => setIsAvailable(e.target.checked)}
+                  className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+                />
+                <span className="text-sm text-text-dark">Available</span>
+              </label>
+            </div>
+          </div>
+
+          {/* Featured Section */}
+          <div className="border-t border-secondary-dark/10 pt-4">
+            <label className="flex items-center gap-2 mb-3">
+              <input
+                type="checkbox"
+                checked={isFeatured}
+                onChange={e => setIsFeatured(e.target.checked)}
+                className="w-4 h-4 text-amber-500 border-gray-300 rounded focus:ring-amber-500"
+              />
+              <span className="text-sm font-medium text-text-dark">★ Feature on Homepage</span>
+            </label>
+            {isFeatured && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 ml-6">
+                <div>
+                  <label className="block text-sm font-medium text-text-dark mb-1">Tagline</label>
+                  <input
+                    value={featuredTagline}
+                    onChange={e => setFeaturedTagline(e.target.value)}
+                    placeholder="e.g. Our most loved creation"
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none text-sm"
+                  />
+                  <p className="text-xs text-accent mt-1">Short marketing tagline</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-text-dark mb-1">Display Order</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={featuredOrder}
+                    onChange={e => setFeaturedOrder(e.target.value)}
+                    className="w-24 px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none text-sm"
+                  />
+                  <p className="text-xs text-accent mt-1">Lower = first</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Footer actions — sticky at bottom */}
+          <div className="sticky bottom-0 -mx-6 -mb-6 px-6 py-4 bg-white border-t border-secondary-dark/10 flex gap-3">
+            <button
+              type="submit"
+              disabled={saving}
+              className="flex-1 bg-primary text-secondary py-3 rounded-xl text-sm font-bold hover:bg-primary-light transition-colors disabled:opacity-50"
+            >
+              {uploading ? 'Uploading image...' : saving ? 'Saving...' : (item ? 'Save Changes' : 'Add Item')}
+            </button>
+            <button
+              type="button"
+              onClick={onCancel}
+              className="px-6 py-3 rounded-xl text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   )
 }
