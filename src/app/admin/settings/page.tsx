@@ -10,8 +10,9 @@ interface SettingField {
   key: string
   label: string
   placeholder: string
-  type: 'text' | 'url' | 'tel'
+  type: 'text' | 'url' | 'tel' | 'textarea'
   group: string
+  hint?: string
 }
 
 const SETTING_FIELDS: SettingField[] = [
@@ -22,6 +23,8 @@ const SETTING_FIELDS: SettingField[] = [
   { key: 'phone', label: 'Phone Number', placeholder: '(412) 251-1392', type: 'tel', group: 'Location & Contact' },
   { key: 'hours_weekday', label: 'Weekday Hours (display text)', placeholder: 'Mon–Sat: 7am – 5pm', type: 'text', group: 'Display Hours' },
   { key: 'hours_weekend', label: 'Weekend Hours (display text)', placeholder: 'Sunday: 9am – 3pm', type: 'text', group: 'Display Hours' },
+  { key: 'story_title', label: 'Title', placeholder: 'More Than Just Coffee', type: 'text', group: 'Our Story' },
+  { key: 'story_body', label: 'Body', placeholder: 'Tell your story...', type: 'textarea', group: 'Our Story', hint: 'Separate paragraphs with a blank line.' },
   { key: 'instagram_url', label: 'Instagram URL', placeholder: 'https://instagram.com/...', type: 'url', group: 'Social Media' },
   { key: 'facebook_url', label: 'Facebook URL', placeholder: 'https://facebook.com/...', type: 'url', group: 'Social Media' },
 ]
@@ -138,14 +141,28 @@ export default function AdminSettingsPage() {
                     <label htmlFor={field.key} className="block text-sm font-medium text-text-dark mb-1">
                       {field.label}
                     </label>
-                    <input
-                      id={field.key}
-                      type={field.type}
-                      value={values[field.key] || ''}
-                      onChange={e => setValues(prev => ({ ...prev, [field.key]: e.target.value }))}
-                      placeholder={field.placeholder}
-                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none text-sm"
-                    />
+                    {field.type === 'textarea' ? (
+                      <textarea
+                        id={field.key}
+                        rows={6}
+                        value={values[field.key] || ''}
+                        onChange={e => setValues(prev => ({ ...prev, [field.key]: e.target.value }))}
+                        placeholder={field.placeholder}
+                        className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none text-sm"
+                      />
+                    ) : (
+                      <input
+                        id={field.key}
+                        type={field.type}
+                        value={values[field.key] || ''}
+                        onChange={e => setValues(prev => ({ ...prev, [field.key]: e.target.value }))}
+                        placeholder={field.placeholder}
+                        className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none text-sm"
+                      />
+                    )}
+                    {field.hint && (
+                      <p className="text-xs text-accent mt-1">{field.hint}</p>
+                    )}
                   </div>
                 ))}
               </div>

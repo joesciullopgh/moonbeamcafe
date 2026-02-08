@@ -11,6 +11,8 @@ export interface StoreSettings {
   instagram_url: string
   facebook_url: string
   tagline: string
+  story_title: string
+  story_body: string
 }
 
 const DEFAULTS: StoreSettings = {
@@ -23,6 +25,8 @@ const DEFAULTS: StoreSettings = {
   instagram_url: 'https://instagram.com/moonbeamcafe',
   facebook_url: 'https://facebook.com/MoonbeamCafePgh',
   tagline: 'Your neighborhood coffee shop in Pittsburgh, serving handcrafted drinks and fresh food with a warm smile.',
+  story_title: 'More Than\nJust Coffee',
+  story_body: 'Moonbeam Cafe is where the neighborhood comes together. We believe that great coffee has the power to build community, spark conversation, and brighten your day.\n\nEvery drink is handcrafted using locally roasted beans, organic ingredients, and syrups we make in-house. From our signature lavender lattes to our fresh-baked pastries, everything is made with intention and care.\n\nWhether you\'re grabbing your morning espresso, meeting a friend, or settling in for an afternoon of work, there\'s always a seat and a warm welcome waiting for you.',
 }
 
 interface StoreSettingsState {

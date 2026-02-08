@@ -243,20 +243,13 @@ export default function Home() {
 
             <div className="px-8 sm:px-12 lg:px-16 py-16 relative">
               <span className="inline-block text-xs font-bold uppercase tracking-[0.2em] text-secondary/50 mb-4">Our Story</span>
-              <h2 className="text-3xl sm:text-4xl font-bold text-secondary mb-6 leading-tight">
-                More Than
-                <br />Just Coffee
+              <h2 className="text-3xl sm:text-4xl font-bold text-secondary mb-6 leading-tight whitespace-pre-line">
+                {settings.story_title || 'More Than\nJust Coffee'}
               </h2>
               <div className="space-y-4 text-secondary/80 leading-relaxed">
-                <p>
-                  {settings.store_name} is where the neighborhood comes together. We believe that great coffee has the power to build community, spark conversation, and brighten your day.
-                </p>
-                <p>
-                  Every drink is handcrafted using locally roasted beans, organic ingredients, and syrups we make in-house. From our signature lavender lattes to our fresh-baked pastries, everything is made with intention and care.
-                </p>
-                <p>
-                  Whether you&apos;re grabbing your morning espresso, meeting a friend, or settling in for an afternoon of work, there&apos;s always a seat and a warm welcome waiting for you.
-                </p>
+                {(settings.story_body || '').split('\n\n').map((paragraph, i) => (
+                  <p key={i}>{paragraph}</p>
+                ))}
               </div>
               <Link
                 href="/menu"
