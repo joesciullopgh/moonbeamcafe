@@ -20,32 +20,32 @@ const STATUS_CONFIG: Record<OrderStatus, {
   pending: {
     label: 'NEW',
     bg: 'bg-white',
-    border: 'border-primary/30',
-    headerBg: 'bg-primary',
-    headerText: 'text-secondary',
-    accent: 'text-primary',
+    border: 'border-emerald-300',
+    headerBg: 'bg-emerald-500',
+    headerText: 'text-white',
+    accent: 'text-emerald-600',
   },
   confirmed: {
     label: 'NEW',
     bg: 'bg-white',
-    border: 'border-primary/30',
-    headerBg: 'bg-primary',
-    headerText: 'text-secondary',
-    accent: 'text-primary',
+    border: 'border-emerald-300',
+    headerBg: 'bg-emerald-500',
+    headerText: 'text-white',
+    accent: 'text-emerald-600',
   },
   preparing: {
     label: 'MAKING',
     bg: 'bg-white',
-    border: 'border-primary-light/40',
-    headerBg: 'bg-primary-light',
-    headerText: 'text-secondary',
-    accent: 'text-primary-light',
+    border: 'border-teal-300',
+    headerBg: 'bg-teal-500',
+    headerText: 'text-white',
+    accent: 'text-teal-600',
   },
   ready: {
     label: 'READY',
     bg: 'bg-white',
-    border: 'border-green-500/40',
-    headerBg: 'bg-green-600',
+    border: 'border-green-400',
+    headerBg: 'bg-green-500',
     headerText: 'text-white',
     accent: 'text-green-600',
   },
@@ -78,6 +78,7 @@ export default function StaffDashboardPage() {
   const [orders, setOrders] = useState<Order[]>([])
   const [profiles, setProfiles] = useState<ProfileMap>({})
   const [loading, setLoading] = useState(true)
+  const [showReady, setShowReady] = useState(true)
   const [showCompleted, setShowCompleted] = useState(false)
   const [updatingIds, setUpdatingIds] = useState<Set<string>>(new Set())
   const { user, profile, loading: authLoading } = useAuthStore()
@@ -281,8 +282,8 @@ export default function StaffDashboardPage() {
           </div>
         </div>
 
-        {/* Active Orders */}
-        {activeOrders.length === 0 ? (
+        {/* Active Orders (New + Making only) */}
+        {newOrders.length === 0 && makingOrders.length === 0 && readyOrders.length === 0 ? (
           <div className="text-center py-20 bg-white rounded-2xl border border-secondary-dark/20">
             <svg className="w-16 h-16 text-primary/20 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -290,11 +291,11 @@ export default function StaffDashboardPage() {
             <p className="text-accent text-lg">No active orders</p>
             <p className="text-accent/60 text-sm mt-1">New orders will appear here in real time</p>
           </div>
-        ) : (
+        ) : (newOrders.length > 0 || makingOrders.length > 0) ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {activeOrders
+            {[...newOrders, ...makingOrders]
               .sort((a, b) => {
-                const priority: Record<string, number> = { pending: 0, confirmed: 0, preparing: 1, ready: 2 }
+                const priority: Record<string, number> = { pending: 0, confirmed: 0, preparing: 1 }
                 const pDiff = (priority[a.status] ?? 99) - (priority[b.status] ?? 99)
                 if (pDiff !== 0) return pDiff
                 return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
@@ -306,9 +307,41 @@ export default function StaffDashboardPage() {
                   customerName={getCustomerName(order)}
                   onUpdateStatus={updateStatus}
                   isUpdating={updatingIds.has(order.id)}
-                  readySince={readyTimestamps.current.get(order.id)}
                 />
               ))}
+          </div>
+        ) : null}
+
+        {/* Ready for Pickup — collapsible section */}
+        {readyOrders.length > 0 && (
+          <div className="mt-6">
+            <button
+              onClick={() => setShowReady(!showReady)}
+              className="flex items-center gap-2 text-sm font-bold text-green-700 hover:text-green-800 transition-colors"
+            >
+              <svg className={`w-4 h-4 transition-transform ${showReady ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+              Ready for Pickup ({readyOrders.length})
+            </button>
+
+            {showReady && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-4">
+                {readyOrders
+                  .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+                  .map(order => (
+                    <OrderCard
+                      key={order.id}
+                      order={order}
+                      customerName={getCustomerName(order)}
+                      onUpdateStatus={updateStatus}
+                      isUpdating={updatingIds.has(order.id)}
+                      readySince={readyTimestamps.current.get(order.id)}
+                    />
+                  ))}
+              </div>
+            )}
           </div>
         )}
 
