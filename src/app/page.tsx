@@ -7,8 +7,6 @@ import { createClient } from '@/lib/supabase/client'
 import { useStoreSettings } from '@/stores/store-settings'
 import type { MenuItem } from '@/lib/types/database'
 
-const PLACEHOLDER = '/placeholder.svg'
-
 const SIGNATURE_NAMES = [
   'Moonbeam Signature Latte',
   'Honey Cinnamon Latte',
@@ -25,6 +23,15 @@ const SIGNATURE_FALLBACKS: Pick<MenuItem, 'name' | 'price' | 'description' | 'im
   { name: 'Lavender Mocha', price: 5.75, description: 'Lavender, chocolate, espresso, and steamed milk', image_url: null },
   { name: 'Rose Cardamom Latte', price: 5.75, description: 'Rose water, cardamom, espresso, and steamed milk', image_url: null },
   { name: 'Maple Pecan Latte', price: 5.75, description: 'Maple syrup, pecan, espresso, and steamed milk', image_url: null },
+]
+
+const DRINK_ACCENTS = [
+  { gradient: 'from-violet-100 to-purple-50', icon: '🌙', accent: 'text-violet-600', ring: 'ring-violet-200' },
+  { gradient: 'from-amber-100 to-yellow-50', icon: '🍯', accent: 'text-amber-600', ring: 'ring-amber-200' },
+  { gradient: 'from-orange-100 to-amber-50', icon: '🤎', accent: 'text-orange-700', ring: 'ring-orange-200' },
+  { gradient: 'from-purple-100 to-indigo-50', icon: '💜', accent: 'text-purple-600', ring: 'ring-purple-200' },
+  { gradient: 'from-rose-100 to-pink-50', icon: '🌹', accent: 'text-rose-600', ring: 'ring-rose-200' },
+  { gradient: 'from-orange-100 to-red-50', icon: '🍁', accent: 'text-orange-600', ring: 'ring-orange-200' },
 ]
 
 export default function Home() {
@@ -48,144 +55,200 @@ export default function Home() {
 
   return (
     <div>
-      {/* Hero Section */}
-      <section className="relative h-[85vh] min-h-[500px] max-h-[800px] overflow-hidden bg-primary">
-        <div className="absolute inset-0 opacity-10">
-          <Image src={PLACEHOLDER} alt="" fill className="object-cover" priority />
-        </div>
+      {/* ===== HERO SECTION ===== */}
+      <section className="relative h-[90vh] min-h-[600px] max-h-[900px] overflow-hidden">
+        {/* Rich SVG background */}
+        <Image src="/hero-bg.svg" alt="" fill className="object-cover" priority />
+        {/* Animated gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#3d4a2d]/80" />
+        {/* Content */}
         <div className="relative h-full flex flex-col items-center justify-center text-center px-4">
-          <Image
-            src="/logo.svg"
-            alt=""
-            width={100}
-            height={100}
-            className="mb-6 drop-shadow-lg"
-            aria-hidden="true"
-          />
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-secondary leading-tight max-w-4xl">
-            Your Neighborhood
-            <br />
-            <span className="text-white">Coffee Shop</span>
-          </h1>
-          <p className="mt-6 text-lg sm:text-xl text-secondary/90 max-w-xl">
-            {settings.tagline}
-          </p>
-          <div className="mt-10 flex flex-col sm:flex-row gap-4">
-            <Link
-              href="/menu"
-              className="bg-secondary text-primary px-10 py-4 rounded-full font-semibold text-lg hover:bg-secondary-dark transition-colors shadow-lg"
-            >
-              Order Now
-            </Link>
-            <Link
-              href="/menu"
-              className="border-2 border-secondary/80 text-secondary px-10 py-4 rounded-full font-semibold text-lg hover:bg-secondary hover:text-primary transition-colors"
-            >
-              View Menu
-            </Link>
+          {/* Moonbeam glow effect */}
+          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#f5e6c8]/10 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="relative">
+            <Image
+              src="/logo.svg"
+              alt=""
+              width={110}
+              height={110}
+              className="mx-auto mb-8 drop-shadow-2xl"
+              aria-hidden="true"
+            />
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-secondary leading-[1.1] max-w-4xl tracking-tight">
+              Your Neighborhood
+              <br />
+              <span className="bg-gradient-to-r from-[#f5e6c8] to-white bg-clip-text text-transparent">Coffee Shop</span>
+            </h1>
+            <p className="mt-6 text-lg sm:text-xl text-secondary/80 max-w-xl mx-auto font-light">
+              {settings.tagline}
+            </p>
+            <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
+              <Link
+                href="/menu"
+                className="group bg-secondary text-primary px-10 py-4 rounded-full font-semibold text-lg shadow-lg shadow-black/20 hover:shadow-xl hover:shadow-black/30 transition-all hover:-translate-y-0.5"
+              >
+                <span className="flex items-center justify-center gap-2">
+                  Order Now
+                  <svg className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
+                </span>
+              </Link>
+              <Link
+                href="/menu"
+                className="border-2 border-secondary/60 text-secondary px-10 py-4 rounded-full font-semibold text-lg hover:bg-secondary/10 transition-all backdrop-blur-sm"
+              >
+                View Menu
+              </Link>
+            </div>
           </div>
-          {/* Scroll hint */}
-          <div className="absolute bottom-8 animate-bounce">
-            <svg className="w-6 h-6 text-secondary/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-            </svg>
+
+          {/* Scroll indicator */}
+          <div className="absolute bottom-8 flex flex-col items-center gap-2">
+            <span className="text-secondary/40 text-xs uppercase tracking-widest font-medium">Scroll</span>
+            <div className="w-5 h-8 border-2 border-secondary/30 rounded-full flex justify-center pt-1.5">
+              <div className="w-1 h-2 bg-secondary/50 rounded-full animate-bounce" />
+            </div>
           </div>
         </div>
       </section>
 
-      {/* What Makes Us Special */}
-      <section className="py-16 sm:py-20 bg-white">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-8">
-            <div className="text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full text-primary mb-5">
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      {/* ===== FEATURED BANNER ===== */}
+      <section className="bg-secondary py-4 overflow-hidden">
+        <div className="flex items-center gap-8 animate-marquee whitespace-nowrap">
+          {[...Array(3)].map((_, g) => (
+            <div key={g} className="flex items-center gap-8 shrink-0">
+              <span className="text-primary/60 font-semibold text-sm tracking-wider uppercase">Locally Roasted Beans</span>
+              <span className="text-primary/30">&#9670;</span>
+              <span className="text-primary/60 font-semibold text-sm tracking-wider uppercase">House-Made Syrups</span>
+              <span className="text-primary/30">&#9670;</span>
+              <span className="text-primary/60 font-semibold text-sm tracking-wider uppercase">Organic Ingredients</span>
+              <span className="text-primary/30">&#9670;</span>
+              <span className="text-primary/60 font-semibold text-sm tracking-wider uppercase">Fresh Pastries Daily</span>
+              <span className="text-primary/30">&#9670;</span>
+              <span className="text-primary/60 font-semibold text-sm tracking-wider uppercase">Free WiFi</span>
+              <span className="text-primary/30">&#9670;</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ===== WHAT MAKES US SPECIAL ===== */}
+      <section className="py-20 sm:py-24 bg-white relative overflow-hidden">
+        {/* Decorative background elements */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-primary/[0.02] rounded-full -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute bottom-0 left-0 w-72 h-72 bg-secondary/30 rounded-full translate-y-1/2 -translate-x-1/2" />
+
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative">
+          <div className="text-center mb-16">
+            <span className="inline-block text-xs font-bold uppercase tracking-[0.2em] text-accent mb-3">Why Moonbeam?</span>
+            <h2 className="text-3xl sm:text-4xl font-bold text-primary">
+              Crafted with Intention
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8">
+            <FeatureCard
+              icon={
+                <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
                 </svg>
-              </div>
-              <h3 className="text-lg font-semibold text-primary mb-2">Handcrafted with Care</h3>
-              <p className="text-accent text-sm leading-relaxed">
-                Every drink is made to order by our skilled baristas using organic ingredients and house-made syrups.
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full text-primary mb-5">
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              }
+              title="Handcrafted Drinks"
+              description="Every drink is made to order by our skilled baristas using organic ingredients and house-made syrups."
+            />
+            <FeatureCard
+              icon={
+                <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
-              </div>
-              <h3 className="text-lg font-semibold text-primary mb-2">Community Hub</h3>
-              <p className="text-accent text-sm leading-relaxed">
-                More than a cafe &mdash; we&apos;re a gathering place for neighbors, creators, and friends.
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full text-primary mb-5">
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              }
+              title="Community Hub"
+              description="More than a cafe — we're a gathering place for neighbors, creators, and friends in Bloomfield."
+            />
+            <FeatureCard
+              icon={
+                <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
                 </svg>
-              </div>
-              <h3 className="text-lg font-semibold text-primary mb-2">Earn Rewards</h3>
-              <p className="text-accent text-sm leading-relaxed">
-                Join our loyalty program &mdash; earn stars with every purchase and unlock free drinks and perks.
-              </p>
-            </div>
+              }
+              title="Earn Rewards"
+              description="Join our loyalty program — earn stars with every purchase and unlock free drinks, birthday treats, and more."
+            />
           </div>
         </div>
       </section>
 
-      {/* Signature Drinks Section */}
-      <section className="py-16 sm:py-20 bg-secondary/30">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-bold text-primary mb-3">
+      {/* ===== SIGNATURE DRINKS ===== */}
+      <section className="py-20 sm:py-24 bg-gradient-to-b from-[#faf6ee] to-white relative">
+        {/* Decorative dots */}
+        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(#3d4a2d 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative">
+          <div className="text-center mb-14">
+            <span className="inline-block text-xs font-bold uppercase tracking-[0.2em] text-accent mb-3">Menu Highlights</span>
+            <h2 className="text-3xl sm:text-4xl font-bold text-primary mb-4">
               Our Signature Creations
             </h2>
-            <p className="text-accent max-w-2xl mx-auto">
-              Unique, handcrafted drinks you&apos;ll only find at {settings.store_name} &mdash; made with house-made syrups and organic ingredients
+            <p className="text-accent max-w-2xl mx-auto leading-relaxed">
+              Unique, handcrafted drinks you&apos;ll only find at {settings.store_name} — made with house-made syrups and organic ingredients
             </p>
           </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {signatureDrinks.map((drink) => (
+            {signatureDrinks.map((drink, i) => (
               <DrinkCard
                 key={drink.name}
                 name={drink.name}
                 price={`$${drink.price.toFixed(2)}`}
                 description={drink.description}
+                accent={DRINK_ACCENTS[i % DRINK_ACCENTS.length]}
               />
             ))}
           </div>
-          <div className="text-center mt-10">
+
+          <div className="text-center mt-12">
             <Link
               href="/menu"
-              className="inline-block bg-primary text-secondary px-8 py-3.5 rounded-full font-semibold text-lg hover:bg-primary-light transition-colors shadow-md"
+              className="group inline-flex items-center gap-2 bg-primary text-secondary px-8 py-4 rounded-full font-semibold text-lg hover:bg-primary-light transition-all shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5"
             >
               See Full Menu
+              <svg className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
             </Link>
           </div>
         </div>
       </section>
 
-      {/* About / Story Section */}
+      {/* ===== ABOUT / STORY SECTION ===== */}
       <section className="relative overflow-hidden">
-        <div className="grid grid-cols-1 md:grid-cols-2">
-          {/* Photo side */}
-          <div className="relative h-80 md:h-auto md:min-h-[500px] bg-primary/5">
+        <div className="grid grid-cols-1 md:grid-cols-2 min-h-[500px]">
+          {/* Illustration side */}
+          <div className="relative h-80 md:h-auto overflow-hidden">
             <Image
-              src={PLACEHOLDER}
-              alt="Moonbeam Cafe"
+              src="/cafe-scene.svg"
+              alt="Inside Moonbeam Cafe"
               fill
-              className="object-contain p-8"
+              className="object-cover"
               sizes="(max-width: 768px) 100vw, 50vw"
             />
+            {/* Warm overlay */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent to-primary/10 md:to-primary/20" />
           </div>
           {/* Text side */}
-          <div className="bg-primary flex items-center">
-            <div className="px-8 sm:px-12 lg:px-16 py-16">
-              <h2 className="text-3xl sm:text-4xl font-bold text-secondary mb-6">
-                More Than Just Coffee
+          <div className="bg-primary flex items-center relative overflow-hidden">
+            {/* Decorative shapes */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-[#4d5e39] rounded-full -translate-y-1/2 translate-x-1/2 opacity-40" />
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-[#4d5e39] rounded-full translate-y-1/2 -translate-x-1/2 opacity-30" />
+
+            <div className="px-8 sm:px-12 lg:px-16 py-16 relative">
+              <span className="inline-block text-xs font-bold uppercase tracking-[0.2em] text-secondary/50 mb-4">Our Story</span>
+              <h2 className="text-3xl sm:text-4xl font-bold text-secondary mb-6 leading-tight">
+                More Than
+                <br />Just Coffee
               </h2>
-              <div className="space-y-4 text-secondary/85 leading-relaxed">
+              <div className="space-y-4 text-secondary/80 leading-relaxed">
                 <p>
                   {settings.store_name} is where the neighborhood comes together. We believe that great coffee has the power to build community, spark conversation, and brighten your day.
                 </p>
@@ -193,59 +256,67 @@ export default function Home() {
                   Every drink is handcrafted using locally roasted beans, organic ingredients, and syrups we make in-house. From our signature lavender lattes to our fresh-baked pastries, everything is made with intention and care.
                 </p>
                 <p>
-                  Whether you&apos;re grabbing your morning espresso, meeting a friend for lunch, or settling in for an afternoon of work, there&apos;s always a seat and a warm welcome waiting for you.
+                  Whether you&apos;re grabbing your morning espresso, meeting a friend, or settling in for an afternoon of work, there&apos;s always a seat and a warm welcome waiting for you.
                 </p>
               </div>
               <Link
                 href="/menu"
-                className="inline-block mt-8 bg-secondary text-primary px-8 py-3 rounded-full font-semibold hover:bg-secondary-dark transition-colors"
+                className="inline-flex items-center gap-2 mt-8 bg-secondary text-primary px-8 py-3.5 rounded-full font-semibold hover:bg-secondary-dark transition-all"
               >
                 Explore Our Menu
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
               </Link>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Rewards CTA Section */}
-      <section className="py-16 sm:py-20 bg-secondary/30">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="bg-white rounded-3xl shadow-lg overflow-hidden">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
-              <div className="p-10 sm:p-14 flex flex-col justify-center">
-                <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-1.5 rounded-full text-sm font-medium w-fit mb-6">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+      {/* ===== REWARDS CTA ===== */}
+      <section className="py-20 sm:py-24 bg-white relative overflow-hidden">
+        <div className="absolute inset-0 opacity-[0.02]" style={{ backgroundImage: 'radial-gradient(#3d4a2d 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
+
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 relative">
+          <div className="rounded-3xl overflow-hidden shadow-2xl shadow-primary/10">
+            <div className="grid grid-cols-1 md:grid-cols-2">
+              {/* Text side */}
+              <div className="bg-white p-10 sm:p-14 flex flex-col justify-center">
+                <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-1.5 rounded-full text-sm font-bold w-fit mb-6">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
                   </svg>
                   Rewards Program
                 </div>
-                <h2 className="text-3xl sm:text-4xl font-bold text-primary mb-4">
-                  Earn Stars,<br />Get Free Drinks
+                <h2 className="text-3xl sm:text-4xl font-bold text-primary mb-4 leading-tight">
+                  Earn Stars,
+                  <br />Get Free Drinks
                 </h2>
                 <p className="text-accent leading-relaxed mb-8">
-                  Join our loyalty program and earn stars with every purchase. Unlock free drinks, birthday treats, and exclusive member perks.
+                  Join our loyalty program and earn stars with every purchase. Unlock free drinks, birthday treats, and exclusive member perks. It&apos;s free to sign up!
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4">
                   <Link
                     href="/signup"
-                    className="bg-primary text-secondary px-8 py-3.5 rounded-full font-semibold hover:bg-primary-light transition-colors text-center shadow-md"
+                    className="bg-primary text-secondary px-8 py-3.5 rounded-full font-semibold hover:bg-primary-light transition-all text-center shadow-lg shadow-primary/20"
                   >
                     Sign Up Free
                   </Link>
                   <Link
                     href="/rewards"
-                    className="border-2 border-primary text-primary px-8 py-3.5 rounded-full font-semibold hover:bg-primary hover:text-secondary transition-colors text-center"
+                    className="border-2 border-primary text-primary px-8 py-3.5 rounded-full font-semibold hover:bg-primary hover:text-secondary transition-all text-center"
                   >
                     Learn More
                   </Link>
                 </div>
               </div>
-              <div className="relative h-64 md:h-auto bg-primary/5">
+              {/* Illustration side */}
+              <div className="relative h-72 md:h-auto">
                 <Image
-                  src={PLACEHOLDER}
-                  alt="Moonbeam Cafe"
+                  src="/rewards-illustration.svg"
+                  alt="Earn rewards at Moonbeam Cafe"
                   fill
-                  className="object-contain p-8"
+                  className="object-cover"
                   sizes="(max-width: 768px) 100vw, 50vw"
                 />
               </div>
@@ -254,10 +325,11 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Visit Us + Social */}
-      <section className="py-16 sm:py-20 bg-white">
+      {/* ===== VISIT US + SOCIAL ===== */}
+      <section className="py-20 sm:py-24 bg-gradient-to-b from-[#faf6ee] to-secondary/40 relative">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
+          <div className="text-center mb-14">
+            <span className="inline-block text-xs font-bold uppercase tracking-[0.2em] text-accent mb-3">Visit Us</span>
             <h2 className="text-3xl sm:text-4xl font-bold text-primary mb-3">
               Come Say Hello
             </h2>
@@ -265,85 +337,125 @@ export default function Home() {
               We&apos;d love to see you. Stop by anytime.
             </p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 max-w-3xl mx-auto">
-            <div className="text-center">
-              <div className="inline-flex items-center justify-center w-12 h-12 bg-primary/10 rounded-full text-primary mb-4">
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-3xl mx-auto">
+            <InfoCard
+              icon={
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-              </div>
-              <h3 className="font-semibold text-primary mb-1">Location</h3>
-              <p className="text-accent text-sm">{settings.address_line1}</p>
-              <p className="text-accent text-sm">{settings.address_line2}</p>
-            </div>
-            <div className="text-center">
-              <div className="inline-flex items-center justify-center w-12 h-12 bg-primary/10 rounded-full text-primary mb-4">
+              }
+              title="Location"
+              line1={settings.address_line1}
+              line2={settings.address_line2}
+            />
+            <InfoCard
+              icon={
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-              </div>
-              <h3 className="font-semibold text-primary mb-1">Hours</h3>
-              <p className="text-accent text-sm">{settings.hours_weekday}</p>
-              <p className="text-accent text-sm">{settings.hours_weekend}</p>
-            </div>
-            <div className="text-center">
-              <div className="inline-flex items-center justify-center w-12 h-12 bg-primary/10 rounded-full text-primary mb-4">
+              }
+              title="Hours"
+              line1={settings.hours_weekday}
+              line2={settings.hours_weekend}
+            />
+            <InfoCard
+              icon={
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                 </svg>
-              </div>
-              <h3 className="font-semibold text-primary mb-1">Contact</h3>
-              <p className="text-accent text-sm">
-                <a href={`tel:${settings.phone.replace(/[^\d+]/g, '')}`} className="hover:text-primary transition-colors">
-                  {settings.phone}
-                </a>
-              </p>
-            </div>
+              }
+              title="Contact"
+              line1={settings.phone}
+              href={`tel:${settings.phone.replace(/[^\d+]/g, '')}`}
+            />
           </div>
+
           {/* Social links */}
           {settings.instagram_url && (
-            <div className="text-center mt-10">
+            <div className="text-center mt-12">
               <a
                 href={settings.instagram_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-primary font-semibold hover:text-primary-light transition-colors"
+                className="group inline-flex items-center gap-3 bg-white text-primary px-6 py-3 rounded-full font-semibold shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5 border border-secondary-dark/20"
               >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
                 </svg>
-                Follow us on Instagram
+                Follow @moonbeamcafe
               </a>
             </div>
           )}
         </div>
       </section>
+
+      {/* ===== FOOTER ACCENT ===== */}
+      <div className="h-2 bg-gradient-to-r from-primary via-accent to-primary" />
     </div>
   )
 }
 
-function DrinkCard({ name, price, description }: { name: string; price: string; description: string }) {
+function FeatureCard({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
+  return (
+    <div className="group text-center px-4">
+      <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/[0.08] rounded-2xl text-primary mb-5 group-hover:bg-primary group-hover:text-secondary transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-primary/20">
+        {icon}
+      </div>
+      <h3 className="text-lg font-bold text-primary mb-2">{title}</h3>
+      <p className="text-accent text-sm leading-relaxed max-w-xs mx-auto">
+        {description}
+      </p>
+    </div>
+  )
+}
+
+function DrinkCard({ name, price, description, accent }: {
+  name: string
+  price: string
+  description: string
+  accent: { gradient: string; icon: string; accent: string; ring: string }
+}) {
   return (
     <Link href="/menu" className="group block">
-      <div className="bg-white rounded-2xl shadow-sm border border-secondary-dark/20 hover:shadow-lg transition-all overflow-hidden">
-        <div className="relative w-full h-48 bg-primary/5">
-          <Image
-            src={PLACEHOLDER}
-            alt={name}
-            fill
-            className="object-contain p-4 group-hover:scale-105 transition-transform duration-500"
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          />
+      <div className={`bg-gradient-to-br ${accent.gradient} rounded-2xl overflow-hidden border border-white/80 hover:shadow-xl hover:shadow-black/5 transition-all duration-300 hover:-translate-y-1 ring-1 ${accent.ring}`}>
+        {/* Drink icon area */}
+        <div className="px-6 pt-8 pb-4 text-center">
+          <span className="text-5xl block mb-2 group-hover:scale-110 transition-transform duration-300">{accent.icon}</span>
         </div>
-        <div className="p-5">
-          <div className="flex items-center justify-between mb-1.5">
-            <h3 className="text-lg font-semibold text-primary group-hover:text-primary-light transition-colors">{name}</h3>
-            <span className="text-accent font-bold text-sm">{price}</span>
+        {/* Info */}
+        <div className="bg-white/70 backdrop-blur-sm px-6 py-5 border-t border-white/50">
+          <div className="flex items-start justify-between gap-2 mb-2">
+            <h3 className="text-base font-bold text-primary leading-tight group-hover:text-primary-light transition-colors">{name}</h3>
+            <span className={`text-sm font-bold ${accent.accent} shrink-0`}>{price}</span>
           </div>
-          <p className="text-accent text-sm leading-relaxed">{description}</p>
+          <p className="text-accent/80 text-sm leading-relaxed">{description}</p>
         </div>
       </div>
     </Link>
+  )
+}
+
+function InfoCard({ icon, title, line1, line2, href }: {
+  icon: React.ReactNode
+  title: string
+  line1: string
+  line2?: string
+  href?: string
+}) {
+  return (
+    <div className="bg-white rounded-2xl p-6 text-center shadow-md border border-secondary-dark/10 hover:shadow-lg transition-shadow">
+      <div className="inline-flex items-center justify-center w-12 h-12 bg-primary/[0.08] rounded-xl text-primary mb-4">
+        {icon}
+      </div>
+      <h3 className="font-bold text-primary mb-2">{title}</h3>
+      {href ? (
+        <a href={href} className="text-accent text-sm hover:text-primary transition-colors block">{line1}</a>
+      ) : (
+        <p className="text-accent text-sm">{line1}</p>
+      )}
+      {line2 && <p className="text-accent text-sm">{line2}</p>}
+    </div>
   )
 }

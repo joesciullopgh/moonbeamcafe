@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 500" preserveAspectRatio="xMidYMid meet">
+  <defs>
+    <linearGradient id="cup-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f5e6c8"/>
+      <stop offset="100%" stop-color="#e8d4a8"/>
+    </linearGradient>
+    <linearGradient id="coffee-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#8b7355"/>
+      <stop offset="100%" stop-color="#6e5a43"/>
+    </linearGradient>
+    <linearGradient id="star-grad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f5e6c8"/>
+      <stop offset="100%" stop-color="#e8d4a8"/>
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="600" height="500" fill="#3d4a2d" rx="24"/>
+  <!-- Decorative circles -->
+  <circle cx="100" cy="100" r="120" fill="#4d5e39" opacity="0.4"/>
+  <circle cx="500" cy="400" r="100" fill="#4d5e39" opacity="0.3"/>
+  <circle cx="300" cy="250" r="200" fill="none" stroke="#f5e6c8" stroke-width="0.5" opacity="0.1"/>
+  <!-- Large coffee cup -->
+  <g transform="translate(200, 120)">
+    <!-- Saucer -->
+    <ellipse cx="100" cy="310" rx="110" ry="25" fill="#e8d4a8" opacity="0.8"/>
+    <!-- Cup body -->
+    <path d="M40 140 L55 290 Q100 320 145 290 L160 140 Z" fill="url(#cup-grad)" stroke="#e8d4a8" stroke-width="2"/>
+    <!-- Coffee surface -->
+    <ellipse cx="100" cy="160" rx="60" ry="18" fill="url(#coffee-grad)"/>
+    <!-- Cup rim -->
+    <ellipse cx="100" cy="140" rx="62" ry="20" fill="none" stroke="#e8d4a8" stroke-width="3"/>
+    <!-- Handle -->
+    <path d="M160 180 Q200 200 195 240 Q190 275 155 270" fill="none" stroke="#e8d4a8" stroke-width="6" stroke-linecap="round"/>
+    <!-- Latte art swirl -->
+    <path d="M85 155 Q100 165 115 155" fill="none" stroke="#f5e6c8" stroke-width="1.5" opacity="0.6"/>
+    <path d="M90 162 Q100 170 110 162" fill="none" stroke="#f5e6c8" stroke-width="1" opacity="0.4"/>
+    <!-- Steam -->
+    <path d="M80 120 Q75 90 85 60 Q90 40 80 20" fill="none" stroke="#f5e6c8" stroke-width="2" opacity="0.3">
+      <animate attributeName="d" values="M80 120 Q75 90 85 60 Q90 40 80 20;M80 120 Q85 90 75 60 Q70 40 80 20;M80 120 Q75 90 85 60 Q90 40 80 20" dur="4s" repeatCount="indefinite"/>
+    </path>
+    <path d="M100 125 Q95 95 105 65 Q110 45 100 15" fill="none" stroke="#f5e6c8" stroke-width="2.5" opacity="0.25">
+      <animate attributeName="d" values="M100 125 Q95 95 105 65 Q110 45 100 15;M100 125 Q105 95 95 65 Q90 45 100 15;M100 125 Q95 95 105 65 Q110 45 100 15" dur="3.5s" repeatCount="indefinite"/>
+    </path>
+    <path d="M120 120 Q115 95 125 70 Q130 50 120 25" fill="none" stroke="#f5e6c8" stroke-width="1.5" opacity="0.2">
+      <animate attributeName="d" values="M120 120 Q115 95 125 70 Q130 50 120 25;M120 120 Q125 95 115 70 Q110 50 120 25;M120 120 Q115 95 125 70 Q130 50 120 25" dur="3s" repeatCount="indefinite"/>
+    </path>
+  </g>
+  <!-- Stars floating around -->
+  <g fill="url(#star-grad)">
+    <polygon points="80,180 86,198 105,198 90,210 95,228 80,218 65,228 70,210 55,198 74,198" opacity="0.7">
+      <animate attributeName="opacity" values="0.7;1;0.7" dur="2s" repeatCount="indefinite"/>
+    </polygon>
+    <polygon points="460,130 464,142 477,142 467,150 470,162 460,155 450,162 453,150 443,142 456,142" opacity="0.5" transform="scale(1.3)">
+      <animate attributeName="opacity" values="0.5;0.9;0.5" dur="2.5s" repeatCount="indefinite"/>
+    </polygon>
+    <polygon points="500,280 504,292 517,292 507,300 510,312 500,305 490,312 493,300 483,292 496,292" opacity="0.6">
+      <animate attributeName="opacity" values="0.6;1;0.6" dur="3s" repeatCount="indefinite"/>
+    </polygon>
+    <polygon points="120,350 124,362 137,362 127,370 130,382 120,375 110,382 113,370 103,362 116,362" opacity="0.4">
+      <animate attributeName="opacity" values="0.4;0.8;0.4" dur="2.2s" repeatCount="indefinite"/>
+    </polygon>
+    <polygon points="450,60 453,68 462,68 455,73 457,82 450,77 443,82 445,73 438,68 447,68" opacity="0.5" transform="scale(0.8)">
+      <animate attributeName="opacity" values="0.5;0.9;0.5" dur="1.8s" repeatCount="indefinite"/>
+    </polygon>
+  </g>
+  <!-- Small dots pattern -->
+  <circle cx="50" cy="50" r="2" fill="#f5e6c8" opacity="0.15"/>
+  <circle cx="150" cy="80" r="1.5" fill="#f5e6c8" opacity="0.1"/>
+  <circle cx="480" cy="200" r="2" fill="#f5e6c8" opacity="0.12"/>
+  <circle cx="550" cy="350" r="1.5" fill="#f5e6c8" opacity="0.1"/>
+  <circle cx="70" cy="450" r="2" fill="#f5e6c8" opacity="0.12"/>
+</svg>

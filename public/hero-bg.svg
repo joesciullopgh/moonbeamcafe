@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 800" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <radialGradient id="g1" cx="20%" cy="30%" r="60%">
+      <stop offset="0%" stop-color="#4d5e39" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#2d3820" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="g2" cx="80%" cy="70%" r="50%">
+      <stop offset="0%" stop-color="#f5e6c8" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#3d4a2d" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="g3" cx="60%" cy="20%" r="40%">
+      <stop offset="0%" stop-color="#f5e6c8" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#3d4a2d" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="dots" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse">
+      <circle cx="30" cy="30" r="1.5" fill="#f5e6c8" opacity="0.12"/>
+    </pattern>
+    <!-- Coffee bean shapes -->
+    <g id="bean">
+      <ellipse rx="12" ry="18" fill="#f5e6c8" opacity="0.06"/>
+      <line x1="0" y1="-14" x2="0" y2="14" stroke="#3d4a2d" stroke-width="1.5" opacity="0.08"/>
+    </g>
+  </defs>
+  <rect width="1440" height="800" fill="#3d4a2d"/>
+  <rect width="1440" height="800" fill="url(#g1)"/>
+  <rect width="1440" height="800" fill="url(#g2)"/>
+  <rect width="1440" height="800" fill="url(#g3)"/>
+  <rect width="1440" height="800" fill="url(#dots)"/>
+  <!-- Scattered coffee beans -->
+  <use href="#bean" x="120" y="150" transform="rotate(25, 120, 150)"/>
+  <use href="#bean" x="350" y="600" transform="rotate(-15, 350, 600)"/>
+  <use href="#bean" x="800" y="100" transform="rotate(40, 800, 100)"/>
+  <use href="#bean" x="1100" y="500" transform="rotate(-30, 1100, 500)"/>
+  <use href="#bean" x="1300" y="200" transform="rotate(10, 1300, 200)"/>
+  <use href="#bean" x="200" y="400" transform="rotate(-45, 200, 400)"/>
+  <use href="#bean" x="600" y="700" transform="rotate(55, 600, 700)"/>
+  <use href="#bean" x="950" y="350" transform="rotate(-20, 950, 350)"/>
+  <use href="#bean" x="1250" y="650" transform="rotate(35, 1250, 650)"/>
+  <use href="#bean" x="450" y="250" transform="rotate(60, 450, 250)"/>
+  <!-- Decorative circles -->
+  <circle cx="100" cy="700" r="200" fill="#f5e6c8" opacity="0.03"/>
+  <circle cx="1350" cy="100" r="150" fill="#f5e6c8" opacity="0.04"/>
+  <circle cx="700" cy="400" r="300" fill="none" stroke="#f5e6c8" stroke-width="0.5" opacity="0.06"/>
+  <!-- Crescent moon shape -->
+  <g transform="translate(1200, 120)" opacity="0.1">
+    <circle cx="0" cy="0" r="40" fill="#f5e6c8"/>
+    <circle cx="15" cy="-10" r="35" fill="#3d4a2d"/>
+  </g>
+</svg>
