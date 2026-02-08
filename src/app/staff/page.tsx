@@ -628,7 +628,7 @@ function OrderCard({
       </div>
 
       {/* Total */}
-      <div className="px-3 py-1.5 border-t border-secondary-dark/10 flex items-center justify-between bg-secondary/50">
+      <div className="px-3 py-1.5 border-t border-secondary-dark/10 flex items-center justify-between bg-stone-100">
         <span className="text-sm font-semibold text-accent">
           {items.reduce((sum, it) => sum + (it.quantity || 1), 0)} item{items.reduce((sum, it) => sum + (it.quantity || 1), 0) !== 1 ? 's' : ''}
         </span>
