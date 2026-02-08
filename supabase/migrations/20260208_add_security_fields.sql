@@ -1,9 +1,8 @@
 -- ============================================================
 -- Security Migration: Lockout, Password Expiry, Force Reset
--- Run this in your Supabase SQL Editor
 -- ============================================================
 
--- 1. Add security columns to profiles table
+-- 1. Add security columns
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS failed_login_attempts integer DEFAULT 0;
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS locked_until timestamptz;
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS password_changed_at timestamptz;
@@ -11,7 +10,7 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS force_password_reset boolean DEFAU
 
 UPDATE profiles SET password_changed_at = now() WHERE password_changed_at IS NULL;
 
--- 2. Add billing/payment columns (safe to re-run)
+-- 2. Billing columns (safe to re-run)
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS phone text;
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS billing_address_line1 text;
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS billing_address_line2 text;
@@ -23,44 +22,27 @@ ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_name text;
 
 -- 3. Check login lockout
 CREATE OR REPLACE FUNCTION check_login_lockout(p_email text)
-RETURNS json
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
+RETURNS json LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
   v_id uuid;
   v_locked_until timestamptz;
   v_remaining integer;
 BEGIN
-  SELECT id, locked_until
-  INTO v_id, v_locked_until
-  FROM profiles WHERE email = p_email;
-
-  IF NOT FOUND THEN
-    RETURN json_build_object('locked', false);
-  END IF;
-
+  SELECT id, locked_until INTO v_id, v_locked_until FROM profiles WHERE email = p_email;
+  IF NOT FOUND THEN RETURN json_build_object('locked', false); END IF;
   IF v_locked_until IS NOT NULL AND v_locked_until > now() THEN
     v_remaining := CEIL(EXTRACT(EPOCH FROM (v_locked_until - now())) / 60);
     RETURN json_build_object('locked', true, 'remaining_minutes', v_remaining);
   END IF;
-
   IF v_locked_until IS NOT NULL AND v_locked_until <= now() THEN
     UPDATE profiles SET failed_login_attempts = 0, locked_until = NULL WHERE id = v_id;
   END IF;
-
   RETURN json_build_object('locked', false);
-END;
-$$;
+END; $$;
 
 -- 4. Record failed login
 CREATE OR REPLACE FUNCTION record_failed_login(p_email text)
-RETURNS json
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
+RETURNS json LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
   v_id uuid;
   v_attempts integer;
@@ -68,42 +50,26 @@ DECLARE
   v_max_attempts integer := 5;
   v_lockout_minutes integer := 15;
 BEGIN
-  SELECT id, failed_login_attempts
-  INTO v_id, v_attempts
-  FROM profiles WHERE email = p_email;
-
-  IF NOT FOUND THEN
-    RETURN json_build_object('locked', false);
-  END IF;
-
+  SELECT id, failed_login_attempts INTO v_id, v_attempts FROM profiles WHERE email = p_email;
+  IF NOT FOUND THEN RETURN json_build_object('locked', false); END IF;
   v_new_count := v_attempts + 1;
-
   IF v_new_count >= v_max_attempts THEN
-    UPDATE profiles
-    SET failed_login_attempts = v_new_count,
-        locked_until = now() + (v_lockout_minutes * interval '1 minute')
-    WHERE id = v_id;
+    UPDATE profiles SET failed_login_attempts = v_new_count, locked_until = now() + (v_lockout_minutes * interval '1 minute') WHERE id = v_id;
     RETURN json_build_object('locked', true, 'remaining_minutes', v_lockout_minutes);
   ELSE
     UPDATE profiles SET failed_login_attempts = v_new_count WHERE id = v_id;
     RETURN json_build_object('locked', false, 'attempts_remaining', v_max_attempts - v_new_count);
   END IF;
-END;
-$$;
+END; $$;
 
--- 5. Reset login attempts on success
+-- 5. Reset login attempts
 CREATE OR REPLACE FUNCTION reset_login_attempts(p_email text)
-RETURNS void
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN
   UPDATE profiles SET failed_login_attempts = 0, locked_until = NULL WHERE email = p_email;
-END;
-$$;
+END; $$;
 
--- 6. Grant permissions to anon and authenticated
+-- 6. Grant permissions
 GRANT EXECUTE ON FUNCTION check_login_lockout(text) TO anon;
 GRANT EXECUTE ON FUNCTION check_login_lockout(text) TO authenticated;
 GRANT EXECUTE ON FUNCTION record_failed_login(text) TO anon;
@@ -111,29 +77,29 @@ GRANT EXECUTE ON FUNCTION record_failed_login(text) TO authenticated;
 GRANT EXECUTE ON FUNCTION reset_login_attempts(text) TO anon;
 GRANT EXECUTE ON FUNCTION reset_login_attempts(text) TO authenticated;
 
--- 7. New user trigger with security fields
+-- 7. New user trigger — uses variables to avoid dot notation corruption
 CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS trigger
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  v_uid uuid;
+  v_email text;
+  v_fname text;
+  v_lname text;
 BEGIN
+  v_uid := (NEW).id;
+  v_email := (NEW).email;
+  v_fname := COALESCE((NEW).raw_user_meta_data ->> 'first_name', '');
+  v_lname := COALESCE((NEW).raw_user_meta_data ->> 'last_name', '');
   INSERT INTO public.profiles (
     id, email, first_name, last_name,
     role, is_active, stars,
     failed_login_attempts, force_password_reset, password_changed_at
   ) VALUES (
-    NEW.id,
-    NEW.email,
-    COALESCE(NEW.raw_user_meta_data ->> 'first_name', ''),
-    COALESCE(NEW.raw_user_meta_data ->> 'last_name', ''),
-    'customer', true, 0,
-    0, false, now()
+    v_uid, v_email, v_fname, v_lname,
+    'customer', true, 0, 0, false, now()
   );
   RETURN NEW;
-END;
-$$;
+END; $$;
 
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
