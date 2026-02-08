@@ -189,10 +189,10 @@ export default function StaffDashboardPage() {
     }
   }, [user, profile, supabase])
 
-  // Tick every 15s
+  // Tick every 1s for live wait timers
   const [, setTick] = useState(0)
   useEffect(() => {
-    const interval = setInterval(() => setTick(t => t + 1), 15000)
+    const interval = setInterval(() => setTick(t => t + 1), 1000)
     return () => clearInterval(interval)
   }, [])
 
@@ -258,26 +258,84 @@ export default function StaffDashboardPage() {
   const makingOrders = activeOrders.filter(o => o.status === 'preparing')
   const readyOrders = activeOrders.filter(o => o.status === 'ready')
 
+  // Today's scoreboard stats
+  const todayStart = new Date()
+  todayStart.setHours(0, 0, 0, 0)
+  const todayMs = todayStart.getTime()
+
+  const todayCompleted = orders.filter(o => {
+    if (o.status !== 'completed') return false
+    const ts = o.updated_at ? new Date(o.updated_at).getTime() : new Date(o.created_at).getTime()
+    return ts >= todayMs
+  })
+
+  const todayDrinks = todayCompleted.reduce((sum, o) => {
+    const items = Array.isArray(o.items) ? (o.items as OrderItem[]) : []
+    return sum + items.reduce((s, it) => s + (it.quantity || 1), 0)
+  }, 0)
+
+  const avgFulfillMs = todayCompleted.length > 0
+    ? todayCompleted.reduce((sum, o) => {
+        const end = o.updated_at ? new Date(o.updated_at).getTime() : Date.now()
+        return sum + (end - new Date(o.created_at).getTime())
+      }, 0) / todayCompleted.length
+    : 0
+
+  const fastestMs = todayCompleted.length > 0
+    ? Math.min(...todayCompleted.map(o => {
+        const end = o.updated_at ? new Date(o.updated_at).getTime() : Date.now()
+        return end - new Date(o.created_at).getTime()
+      }))
+    : 0
+
   return (
     <div className="h-[100dvh] bg-secondary flex flex-col overflow-hidden">
       {/* Top bar */}
-      <div className="bg-primary text-secondary px-4 sm:px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">Order Queue</h1>
-            <p className="text-secondary/70 text-sm">{activeOrders.length} active order{activeOrders.length !== 1 ? 's' : ''}</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-              <span className="text-sm text-secondary/70">Live</span>
+      <div className="bg-primary text-secondary px-4 sm:px-6 py-3">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <h1 className="text-xl font-bold">Order Queue</h1>
+              <span className="text-secondary/50 text-sm">{activeOrders.length} active</span>
             </div>
-            <button
-              onClick={() => router.push('/')}
-              className="text-secondary/70 hover:text-white text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-secondary/50 rounded"
-            >
-              Back to site
-            </button>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                <span className="text-sm text-secondary/70">Live</span>
+              </div>
+              <button
+                onClick={() => router.push('/')}
+                className="text-secondary/70 hover:text-white text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-secondary/50 rounded"
+              >
+                Back to site
+              </button>
+            </div>
+          </div>
+          {/* Scoreboard strip */}
+          <div className="flex items-center gap-3 mt-1.5 overflow-x-auto">
+            <div className="flex items-center gap-1.5 bg-secondary/10 rounded-full px-2.5 py-1 shrink-0">
+              <span className="text-xs text-secondary/60">Today</span>
+              <span className="text-sm font-black">{todayDrinks}</span>
+              <span className="text-xs text-secondary/60">drinks</span>
+            </div>
+            {avgFulfillMs > 0 && (
+              <div className="flex items-center gap-1.5 bg-secondary/10 rounded-full px-2.5 py-1 shrink-0">
+                <span className="text-xs text-secondary/60">Avg</span>
+                <span className="text-sm font-black">{formatDuration(avgFulfillMs)}</span>
+              </div>
+            )}
+            {fastestMs > 0 && fastestMs < Infinity && (
+              <div className="flex items-center gap-1.5 bg-secondary/10 rounded-full px-2.5 py-1 shrink-0">
+                <span className="text-xs text-secondary/60">Best</span>
+                <span className="text-sm font-black text-green-300">{formatDuration(fastestMs)}</span>
+              </div>
+            )}
+            {todayCompleted.length > 0 && (
+              <div className="flex items-center gap-1.5 bg-secondary/10 rounded-full px-2.5 py-1 shrink-0">
+                <span className="text-xs text-secondary/60">Orders</span>
+                <span className="text-sm font-black">{todayCompleted.length}</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -496,12 +554,15 @@ function OrderCard({
 }) {
   const config = STATUS_CONFIG[order.status]
   const items = Array.isArray(order.items) ? (order.items as OrderItem[]) : []
-  const timeSince = getTimeSince(order.created_at)
   const isNew = order.status === 'pending' || order.status === 'confirmed'
   const isPreparing = order.status === 'preparing'
   const isReady = order.status === 'ready'
   const isDone = order.status === 'completed' || order.status === 'cancelled'
   const isUrgent = isNew && getMinutesSince(order.created_at) >= 5
+
+  // Live wait timer
+  const waitMs = Date.now() - new Date(order.created_at).getTime()
+  const waitTimer = formatWaitTimer(waitMs)
 
   let readyMinLeft = 0
   if (isReady && readySince) {
@@ -511,19 +572,28 @@ function OrderCard({
 
   return (
     <div className={`rounded-xl ${isUrgent ? 'border-[3px] border-red-600' : `border-2 ${config.border}`} ${config.bg} overflow-hidden transition-all shadow-sm hover:shadow-md ${isUpdating ? 'opacity-60 scale-[0.98]' : ''}`}>
-      {/* Header */}
-      <div className={`${config.headerBg} ${config.headerText} px-3 py-2.5`}>
-        <span className="text-[11px] font-black uppercase tracking-widest">{config.label}</span>
+      {/* Header with live timer */}
+      <div className={`${config.headerBg} ${config.headerText} px-3 py-2`}>
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] font-black uppercase tracking-widest opacity-80">{config.label}</span>
+          {!isDone && (
+            <span className={`font-mono text-xs font-black px-1.5 py-0.5 rounded ${
+              isUrgent
+                ? 'bg-red-500 text-white'
+                : isNew
+                  ? 'bg-white/20 text-white'
+                  : isPreparing
+                    ? 'bg-white/20 text-white'
+                    : 'bg-white/20 text-white'
+            }`}>
+              {waitTimer}
+            </span>
+          )}
+        </div>
         <p className="text-base font-black mt-0.5 leading-tight truncate">{customerName}</p>
-      </div>
-
-      {/* Time */}
-      <div className={`px-3 py-2 flex items-center gap-2 border-b ${isUrgent ? 'bg-red-50 border-red-200' : 'bg-secondary border-secondary-dark/10'}`}>
-        <svg className={`w-3.5 h-3.5 shrink-0 ${isUrgent ? 'text-red-500' : 'text-accent/50'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <span className={`text-sm font-bold ${isUrgent ? 'text-red-600' : 'text-text-dark'}`}>{timeSince}</span>
-        {isUrgent && <span className="text-xs font-bold text-red-800 bg-red-100 px-2 py-0.5 rounded-full ml-auto">URGENT</span>}
+        {isUrgent && (
+          <span className="inline-block text-[10px] font-black text-red-100 bg-red-500/60 px-1.5 py-0.5 rounded mt-1 uppercase tracking-wider">Urgent</span>
+        )}
       </div>
 
       {/* Items */}
@@ -647,11 +717,24 @@ function getMinutesSince(dateStr: string): number {
   return Math.floor((new Date().getTime() - new Date(dateStr).getTime()) / 60000)
 }
 
-function getTimeSince(dateStr: string): string {
-  const diffMin = getMinutesSince(dateStr)
-  if (diffMin < 1) return 'Just now'
-  if (diffMin < 60) return `${diffMin} min ago`
-  const diffHr = Math.floor(diffMin / 60)
-  if (diffHr < 24) return `${diffHr}h ${diffMin % 60}m ago`
-  return new Date(dateStr).toLocaleDateString()
+/** Live mm:ss counter for active order cards */
+function formatWaitTimer(ms: number): string {
+  const totalSec = Math.max(0, Math.floor(ms / 1000))
+  const h = Math.floor(totalSec / 3600)
+  const m = Math.floor((totalSec % 3600) / 60)
+  const s = totalSec % 60
+  if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+  return `${m}:${String(s).padStart(2, '0')}`
+}
+
+/** Format duration in ms to compact display (e.g., "3:45" or "1h 12m") */
+function formatDuration(ms: number): string {
+  const totalMin = Math.floor(ms / 60000)
+  if (totalMin < 60) {
+    const sec = Math.floor((ms % 60000) / 1000)
+    return `${totalMin}:${String(sec).padStart(2, '0')}`
+  }
+  const h = Math.floor(totalMin / 60)
+  const m = totalMin % 60
+  return `${h}h ${m}m`
 }

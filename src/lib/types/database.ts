@@ -80,6 +80,7 @@ export interface Order {
   status: OrderStatus
   stars_earned: number
   created_at: string
+  updated_at?: string
 }
 
 export interface Favorite {
