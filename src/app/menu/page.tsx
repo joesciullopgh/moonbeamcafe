@@ -192,50 +192,46 @@ function MenuCard({
         </div>
       )}
 
-      {/* Content area */}
-      <div className="relative bg-gradient-to-br from-secondary/50 to-white px-6 pt-5 pb-4">
-        {/* Popular badge */}
-        {isPopular && (
-          <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-800 text-[10px] font-bold px-2.5 py-1 rounded-full mb-3 uppercase tracking-wide">
-            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-            </svg>
-            Popular
-          </span>
-        )}
-
-        {/* Drink photo or icon */}
+      {/* Horizontal layout: photo left, text right */}
+      <div className="relative bg-gradient-to-br from-secondary/40 to-white p-4 flex gap-4">
+        {/* Photo — left, large */}
         {imageUrl ? (
           <img
             src={imageUrl}
             alt={item.name}
-            className="w-14 h-14 rounded-xl object-cover ring-2 ring-white/60 shadow-sm mb-3"
+            className="w-24 h-24 rounded-2xl object-cover shadow-sm shrink-0"
           />
         ) : (
-          <div className="w-14 h-14 rounded-xl bg-secondary/80 flex items-center justify-center mb-3 ring-1 ring-secondary-dark/10">
-            <span className="text-2xl" role="img" aria-label={item.category}>{categoryIcon}</span>
+          <div className="w-24 h-24 rounded-2xl bg-secondary flex items-center justify-center shrink-0">
+            <span className="text-4xl" role="img" aria-label={item.category}>{categoryIcon}</span>
           </div>
         )}
 
-        {/* Name — primary scan target */}
-        <h3 className="font-bold text-primary text-xl leading-tight pr-8">{item.name}</h3>
+        {/* Text — right */}
+        <div className="flex-1 min-w-0 py-0.5">
+          {isPopular && (
+            <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full mb-1.5 uppercase tracking-wide">
+              <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+              </svg>
+              Popular
+            </span>
+          )}
 
-        {/* Price — below name for clear hierarchy */}
-        <p className="text-lg font-black text-primary/80 mt-1">${item.price.toFixed(2)}</p>
+          <h3 className="font-bold text-primary text-lg leading-snug pr-7">{item.name}</h3>
+          <p className="text-base font-black text-primary/80 mt-0.5">${item.price.toFixed(2)}</p>
+          <p className="text-accent text-xs mt-1.5 leading-relaxed line-clamp-2">{item.description}</p>
 
-        {/* Description — softened for supporting role */}
-        <p className="text-accent text-xs mt-2 leading-relaxed line-clamp-2">{item.description}</p>
-
-        {/* Customizable options hint */}
-        {isCustomizable && (
-          <p className="text-[11px] text-accent/60 font-medium uppercase tracking-wide mt-2.5">
-            Hot · Iced · Blended
-          </p>
-        )}
+          {isCustomizable && (
+            <p className="text-[11px] text-accent/50 font-medium uppercase tracking-wide mt-1.5">
+              Hot · Iced · Blended
+            </p>
+          )}
+        </div>
       </div>
 
-      {/* CTA — split between customize (primary) and quick-add (ghost) */}
-      <div className="px-6 pb-5 pt-3 mt-auto">
+      {/* CTA */}
+      <div className="px-4 pb-4 pt-2 mt-auto">
         {isMenuItem ? (
           <button
             onClick={handleAddToCart}
