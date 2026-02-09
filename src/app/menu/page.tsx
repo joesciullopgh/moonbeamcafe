@@ -21,6 +21,8 @@ export default function MenuPage() {
   const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
+    let done = false
+
     async function fetchMenu() {
       try {
         const { data, error } = await supabase
@@ -30,19 +32,32 @@ export default function MenuPage() {
           .order('category')
           .order('name')
 
+        if (done) return
         if (error || !data || data.length === 0) {
           setUsingFallback(true)
         } else {
           setMenuItems(data)
         }
       } catch {
-        setUsingFallback(true)
+        if (!done) setUsingFallback(true)
       } finally {
+        done = true
         setLoading(false)
       }
     }
 
     fetchMenu()
+
+    // Safety net: if Supabase hangs (cold start / network), fall back after 6s
+    const timer = setTimeout(() => {
+      if (!done) {
+        done = true
+        setUsingFallback(true)
+        setLoading(false)
+      }
+    }, 6000)
+
+    return () => { done = true; clearTimeout(timer) }
   }, [supabase])
 
   const q = search.toLowerCase().trim()

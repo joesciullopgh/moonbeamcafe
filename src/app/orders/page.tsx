@@ -40,6 +40,7 @@ export default function OrdersPage() {
 
     if (!user) return
 
+    let done = false
     async function fetchOrders() {
       try {
         const { data } = await supabase
@@ -47,14 +48,18 @@ export default function OrdersPage() {
           .select('*')
           .eq('user_id', user!.id)
           .order('created_at', { ascending: false })
-        setOrders((data as Order[]) || [])
+        if (!done) setOrders((data as Order[]) || [])
       } catch {
         // fail silently, show empty orders
       } finally {
+        done = true
         setLoading(false)
       }
     }
     fetchOrders()
+    const timer = setTimeout(() => {
+      if (!done) { done = true; setLoading(false) }
+    }, 8000)
 
     // Realtime: listen for updates to user's orders
     const channel = supabase
@@ -76,6 +81,8 @@ export default function OrdersPage() {
       .subscribe()
 
     return () => {
+      done = true
+      clearTimeout(timer)
       supabase.removeChannel(channel)
     }
   }, [user, authLoading, router, supabase])

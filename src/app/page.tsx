@@ -34,6 +34,7 @@ export default function Home() {
   const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
+    let done = false
     async function fetchFeatured() {
       try {
         const { data } = await supabase
@@ -42,16 +43,22 @@ export default function Home() {
           .eq('is_featured', true)
           .eq('is_available', true)
           .order('featured_order', { ascending: true })
-        if (data && data.length > 0) {
+        if (!done && data && data.length > 0) {
           setFeaturedItems(data)
         }
       } catch {
         // silently fall back to no featured items
       } finally {
+        done = true
         setFeaturedLoading(false)
       }
     }
     fetchFeatured()
+    // Safety net: if Supabase hangs, stop loading spinner after 6s
+    const timer = setTimeout(() => {
+      if (!done) { done = true; setFeaturedLoading(false) }
+    }, 6000)
+    return () => { done = true; clearTimeout(timer) }
   }, [supabase])
 
   return (

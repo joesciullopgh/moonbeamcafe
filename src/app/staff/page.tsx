@@ -118,37 +118,50 @@ export default function StaffDashboardPage() {
   // Fetch orders + profiles + realtime subscription
   useEffect(() => {
     if (!user || !profile) return
+    let done = false
 
     async function fetchData() {
-      const [ordersRes, profilesRes] = await Promise.all([
-        supabase.from('orders').select('*').order('created_at', { ascending: true }),
-        supabase.from('profiles').select('id, first_name, last_name, email'),
-      ])
+      try {
+        const [ordersRes, profilesRes] = await Promise.all([
+          supabase.from('orders').select('*').order('created_at', { ascending: true }),
+          supabase.from('profiles').select('id, first_name, last_name, email'),
+        ])
 
-      const fetched = (ordersRes.data as Order[]) || []
-      setOrders(fetched)
+        if (done) return
 
-      // Build a lookup map: user_id → { first_name, last_name, email }
-      const pMap: ProfileMap = {}
-      for (const p of profilesRes.data || []) {
-        pMap[p.id] = p
-      }
-      setProfiles(pMap)
+        const fetched = (ordersRes.data as Order[]) || []
+        setOrders(fetched)
 
-      setLoading(false)
-
-      // Use the DB updated_at as the "ready since" timestamp so the
-      // 15-min auto-complete works even after a page reload.
-      for (const o of fetched) {
-        if (o.status === 'ready' && !readyTimestamps.current.has(o.id)) {
-          const readyAt = o.updated_at
-            ? new Date(o.updated_at).getTime()
-            : Date.now()
-          readyTimestamps.current.set(o.id, readyAt)
+        // Build a lookup map: user_id → { first_name, last_name, email }
+        const pMap: ProfileMap = {}
+        for (const p of profilesRes.data || []) {
+          pMap[p.id] = p
         }
+        setProfiles(pMap)
+
+        // Use the DB updated_at as the "ready since" timestamp so the
+        // 15-min auto-complete works even after a page reload.
+        for (const o of fetched) {
+          if (o.status === 'ready' && !readyTimestamps.current.has(o.id)) {
+            const readyAt = o.updated_at
+              ? new Date(o.updated_at).getTime()
+              : Date.now()
+            readyTimestamps.current.set(o.id, readyAt)
+          }
+        }
+      } catch {
+        // fail silently — show empty queue
+      } finally {
+        done = true
+        setLoading(false)
       }
     }
     fetchData()
+
+    // Safety net: if Supabase hangs on cold start, stop loading after 8s
+    const timer = setTimeout(() => {
+      if (!done) { done = true; setLoading(false) }
+    }, 8000)
 
     const channel = supabase
       .channel('staff-orders-realtime')
@@ -189,6 +202,8 @@ export default function StaffDashboardPage() {
       .subscribe()
 
     return () => {
+      done = true
+      clearTimeout(timer)
       supabase.removeChannel(channel)
     }
   }, [user, profile, supabase])
