@@ -7,12 +7,18 @@ import type { MenuItem } from '@/lib/types/database'
 import { useAuthStore } from '@/stores/auth-store'
 import { uploadMenuImage, deleteMenuImage } from '@/lib/supabase/upload-image'
 
+type SortField = 'name' | 'category' | 'price' | 'is_available'
+type SortDir = 'asc' | 'desc'
+
 export default function AdminMenuPage() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null)
   const [seeding, setSeeding] = useState(false)
+  const [search, setSearch] = useState('')
+  const [sortField, setSortField] = useState<SortField>('name')
+  const [sortDir, setSortDir] = useState<SortDir>('asc')
   const { profile } = useAuthStore()
   const supabase = useMemo(() => createClient(), [])
 
@@ -111,6 +117,45 @@ export default function AdminMenuPage() {
     setEditingItem(null)
   }
 
+  function toggleSort(field: SortField) {
+    if (sortField === field) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortDir('asc')
+    }
+  }
+
+  const filteredItems = useMemo(() => {
+    const q = search.toLowerCase().trim()
+    let items = menuItems
+    if (q) {
+      items = items.filter(i =>
+        i.name.toLowerCase().includes(q) ||
+        i.category.toLowerCase().includes(q) ||
+        i.description.toLowerCase().includes(q)
+      )
+    }
+    return [...items].sort((a, b) => {
+      let cmp = 0
+      switch (sortField) {
+        case 'name':
+          cmp = a.name.localeCompare(b.name)
+          break
+        case 'category':
+          cmp = a.category.localeCompare(b.category) || a.name.localeCompare(b.name)
+          break
+        case 'price':
+          cmp = a.price - b.price
+          break
+        case 'is_available':
+          cmp = (a.is_available === b.is_available ? 0 : a.is_available ? -1 : 1)
+          break
+      }
+      return sortDir === 'asc' ? cmp : -cmp
+    })
+  }, [menuItems, search, sortField, sortDir])
+
   if (profile?.role !== 'admin') {
     return <div className="text-accent">Only admins can manage the menu.</div>
   }
@@ -142,6 +187,37 @@ export default function AdminMenuPage() {
         </div>
       </div>
 
+      {/* Search bar */}
+      <div className="relative mb-4">
+        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-accent/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        <input
+          type="text"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Search by name, category, or description..."
+          className="w-full pl-10 pr-4 py-2.5 border border-secondary-dark/20 rounded-xl text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+        />
+        {search && (
+          <button
+            onClick={() => setSearch('')}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-accent/50 hover:text-accent"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        )}
+      </div>
+
+      {/* Item count */}
+      {search && (
+        <p className="text-xs text-accent mb-2">
+          {filteredItems.length} of {menuItems.length} items
+        </p>
+      )}
+
       {/* Menu items table */}
       <div className="bg-white rounded-xl border border-secondary-dark/20 overflow-hidden">
         <div className="overflow-x-auto">
@@ -149,17 +225,17 @@ export default function AdminMenuPage() {
             <thead className="bg-primary/5">
               <tr>
                 <th className="text-left px-4 py-3 font-medium text-primary">Photo</th>
-                <th className="text-left px-4 py-3 font-medium text-primary">Name</th>
-                <th className="text-left px-4 py-3 font-medium text-primary hidden md:table-cell">Category</th>
-                <th className="text-left px-4 py-3 font-medium text-primary">Price</th>
-                <th className="text-left px-4 py-3 font-medium text-primary">Status</th>
+                <SortHeader field="name" current={sortField} dir={sortDir} onClick={toggleSort}>Name</SortHeader>
+                <SortHeader field="category" current={sortField} dir={sortDir} onClick={toggleSort} className="hidden md:table-cell">Category</SortHeader>
+                <SortHeader field="price" current={sortField} dir={sortDir} onClick={toggleSort}>Price</SortHeader>
+                <SortHeader field="is_available" current={sortField} dir={sortDir} onClick={toggleSort}>Status</SortHeader>
                 <th className="text-center px-4 py-3 font-medium text-primary">Popular</th>
                 <th className="text-center px-4 py-3 font-medium text-primary">Featured</th>
                 <th className="text-right px-4 py-3 font-medium text-primary">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-secondary-dark/10">
-              {menuItems.map(item => (
+              {filteredItems.map(item => (
                 <tr
                   key={item.id}
                   className="hover:bg-primary/5 cursor-pointer"
@@ -245,10 +321,12 @@ export default function AdminMenuPage() {
                   </td>
                 </tr>
               ))}
-              {menuItems.length === 0 && (
+              {filteredItems.length === 0 && (
                 <tr>
                   <td colSpan={8} className="px-4 py-8 text-center text-accent">
-                    No menu items yet. Click &quot;Seed Default Menu&quot; to add the full menu, or add items manually.
+                    {search
+                      ? `No items matching "${search}"`
+                      : 'No menu items yet. Click "Seed Default Menu" to add the full menu, or add items manually.'}
                   </td>
                 </tr>
               )}
@@ -272,6 +350,37 @@ export default function AdminMenuPage() {
   )
 }
 
+function SortHeader({
+  field,
+  current,
+  dir,
+  onClick,
+  className,
+  children,
+}: {
+  field: SortField
+  current: SortField
+  dir: SortDir
+  onClick: (f: SortField) => void
+  className?: string
+  children: React.ReactNode
+}) {
+  const active = field === current
+  return (
+    <th
+      className={`text-left px-4 py-3 font-medium text-primary select-none cursor-pointer hover:bg-primary/10 transition-colors ${className || ''}`}
+      onClick={() => onClick(field)}
+    >
+      <span className="inline-flex items-center gap-1">
+        {children}
+        <span className={`text-[10px] ${active ? 'text-primary' : 'text-accent/30'}`}>
+          {active ? (dir === 'asc' ? '▲' : '▼') : '▲'}
+        </span>
+      </span>
+    </th>
+  )
+}
+
 function MenuItemModal({
   item,
   onSave,
@@ -288,6 +397,7 @@ function MenuItemModal({
   const [customizable, setCustomizable] = useState(item?.customizable ?? false)
   const [isAvailable, setIsAvailable] = useState(item?.is_available ?? true)
   const [isFeatured, setIsFeatured] = useState(item?.is_featured ?? false)
+  const [isPopular, setIsPopular] = useState(item?.is_popular ?? false)
   const [featuredTagline, setFeaturedTagline] = useState(item?.featured_tagline || '')
   const [featuredOrder, setFeaturedOrder] = useState(item?.featured_order?.toString() || '0')
   const [imageUrl, setImageUrl] = useState(item?.image_url || '')
@@ -388,6 +498,7 @@ function MenuItemModal({
         customizable,
         is_available: isAvailable,
         is_featured: isFeatured,
+        is_popular: isPopular,
         featured_tagline: featuredTagline || null,
         featured_order: parseInt(featuredOrder) || 0,
         image_url: finalImageUrl || null,
@@ -573,9 +684,19 @@ function MenuItemModal({
             </div>
           </div>
 
-          {/* Featured Section */}
-          <div className="border-t border-secondary-dark/10 pt-4">
-            <label className="flex items-center gap-2 mb-3">
+          {/* Popular & Featured Section */}
+          <div className="border-t border-secondary-dark/10 pt-4 space-y-3">
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={isPopular}
+                onChange={e => setIsPopular(e.target.checked)}
+                className="w-4 h-4 text-amber-500 border-gray-300 rounded focus:ring-amber-500"
+              />
+              <span className="text-sm font-medium text-text-dark">⭐ Mark as Popular</span>
+              <span className="text-xs text-accent">(shows badge on menu)</span>
+            </label>
+            <label className="flex items-center gap-2">
               <input
                 type="checkbox"
                 checked={isFeatured}

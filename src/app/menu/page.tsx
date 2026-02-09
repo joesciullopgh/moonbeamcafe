@@ -15,6 +15,7 @@ export default function MenuPage() {
   const [activeCategory, setActiveCategory] = useState<string>(MENU_CATEGORIES[0])
   const [usingFallback, setUsingFallback] = useState(false)
   const [customizingItem, setCustomizingItem] = useState<MenuItem | null>(null)
+  const [search, setSearch] = useState('')
   const cartItemCount = useCartStore(s => s.getItemCount())
   const cartTotal = useCartStore(s => s.getTotal())
   const supabase = useMemo(() => createClient(), [])
@@ -44,9 +45,19 @@ export default function MenuPage() {
     fetchMenu()
   }, [supabase])
 
-  const displayItems: (MenuItem | MenuItemData)[] = usingFallback
-    ? MENU_ITEMS.filter(item => item.category === activeCategory)
-    : menuItems.filter(item => item.category === activeCategory)
+  const q = search.toLowerCase().trim()
+  const isSearching = q.length > 0
+
+  const displayItems: (MenuItem | MenuItemData)[] = useMemo(() => {
+    const source = usingFallback ? MENU_ITEMS : menuItems
+    if (isSearching) {
+      return source.filter(item =>
+        item.name.toLowerCase().includes(q) ||
+        item.description.toLowerCase().includes(q)
+      )
+    }
+    return source.filter(item => item.category === activeCategory)
+  }, [usingFallback, menuItems, isSearching, q, activeCategory])
 
   const categories = usingFallback
     ? MENU_CATEGORIES
@@ -71,8 +82,32 @@ export default function MenuPage() {
       </div>
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-        {/* Category Tabs */}
-        <div className="relative">
+        {/* Search */}
+        <div className="relative mb-6">
+          <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-accent/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search the menu..."
+            className="w-full pl-12 pr-10 py-3 bg-white border border-secondary-dark/20 rounded-full text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none shadow-sm"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch('')}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-accent/40 hover:text-accent"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
+
+        {/* Category Tabs — hidden while searching */}
+        {!isSearching && <div className="relative">
           <div className="flex overflow-x-auto gap-2.5 pb-4 mb-8 scrollbar-hide -mx-1 px-1">
             {categories.map((category) => (
               <button
@@ -89,7 +124,14 @@ export default function MenuPage() {
             ))}
           </div>
           <div className="absolute right-0 top-0 bottom-4 w-12 bg-gradient-to-l from-white to-transparent pointer-events-none" />
-        </div>
+        </div>}
+
+        {/* Search result count */}
+        {isSearching && (
+          <p className="text-sm text-accent mb-4">
+            {displayItems.length} result{displayItems.length !== 1 ? 's' : ''} for &ldquo;{search}&rdquo;
+          </p>
+        )}
 
         {/* Menu Items Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -105,7 +147,9 @@ export default function MenuPage() {
 
         {displayItems.length === 0 && (
           <div className="text-center py-12 text-accent">
-            No items available in this category.
+            {isSearching
+              ? `No items matching "${search}"`
+              : 'No items available in this category.'}
           </div>
         )}
       </div>
