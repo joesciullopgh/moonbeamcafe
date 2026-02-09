@@ -32,12 +32,17 @@ export default function AdminReportsPage() {
 
   useEffect(() => {
     async function load() {
-      const { data } = await supabase
-        .from('orders')
-        .select('*')
-        .order('created_at', { ascending: false })
-      setOrders((data as Order[]) || [])
-      setLoading(false)
+      try {
+        const { data } = await supabase
+          .from('orders')
+          .select('*')
+          .order('created_at', { ascending: false })
+        setOrders((data as Order[]) || [])
+      } catch {
+        // silently handle fetch error
+      } finally {
+        setLoading(false)
+      }
     }
     load()
   }, [supabase])

@@ -21,19 +21,24 @@ export default function MenuPage() {
 
   useEffect(() => {
     async function fetchMenu() {
-      const { data, error } = await supabase
-        .from('menu_items')
-        .select('*')
-        .eq('is_available', true)
-        .order('category')
-        .order('name')
+      try {
+        const { data, error } = await supabase
+          .from('menu_items')
+          .select('*')
+          .eq('is_available', true)
+          .order('category')
+          .order('name')
 
-      if (error || !data || data.length === 0) {
+        if (error || !data || data.length === 0) {
+          setUsingFallback(true)
+        } else {
+          setMenuItems(data)
+        }
+      } catch {
         setUsingFallback(true)
-      } else {
-        setMenuItems(data)
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
     }
 
     fetchMenu()
@@ -145,15 +150,6 @@ const CATEGORY_ICONS: Record<string, string> = {
   'Smoothies': '🥤',
 }
 
-const POPULAR_ITEMS = new Set([
-  'Moonbeam Signature Latte',
-  'Caramel Macchiato',
-  'Mocha',
-  'Cold Brew',
-  'Chai Latte',
-  'Avocado Toast',
-  'Butter Croissant',
-])
 
 function MenuCard({
   item,
@@ -169,7 +165,7 @@ function MenuCard({
   const isMenuItem = !usingFallback && 'id' in item
   const categoryIcon = CATEGORY_ICONS[item.category] || '☕'
   const imageUrl = isMenuItem ? (item as MenuItem).image_url : null
-  const isPopular = POPULAR_ITEMS.has(item.name)
+  const isPopular = isMenuItem ? (item as MenuItem).is_popular : false
 
   function handleAddToCart() {
     if (!isMenuItem) return

@@ -23,13 +23,18 @@ export default function FavoritesPage() {
     if (!user) return
 
     async function fetchFavorites() {
-      const { data } = await supabase
-        .from('favorites')
-        .select('*, menu_item:menu_items(*)')
-        .eq('user_id', user!.id)
-        .order('created_at', { ascending: false })
-      setFavorites(data || [])
-      setLoading(false)
+      try {
+        const { data } = await supabase
+          .from('favorites')
+          .select('*, menu_item:menu_items(*)')
+          .eq('user_id', user!.id)
+          .order('created_at', { ascending: false })
+        setFavorites(data || [])
+      } catch {
+        // fail silently
+      } finally {
+        setLoading(false)
+      }
     }
     fetchFavorites()
   }, [user, authLoading, router, supabase])

@@ -23,12 +23,17 @@ export default function AdminOrdersPage() {
 
   useEffect(() => {
     async function fetchOrders() {
-      const { data } = await supabase
-        .from('orders')
-        .select('*')
-        .order('created_at', { ascending: false })
-      setOrders((data as Order[]) || [])
-      setLoading(false)
+      try {
+        const { data } = await supabase
+          .from('orders')
+          .select('*')
+          .order('created_at', { ascending: false })
+        setOrders((data as Order[]) || [])
+      } catch {
+        // silently handle fetch error
+      } finally {
+        setLoading(false)
+      }
     }
     fetchOrders()
   }, [supabase])

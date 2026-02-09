@@ -18,14 +18,19 @@ export default function AdminCustomizationsPage() {
   const supabase = useMemo(() => createClient(), [])
 
   async function fetchOptions() {
-    const { data } = await supabase
-      .from('customization_options')
-      .select('*')
-      .order('type')
-      .order('price_modifier')
-      .order('name')
-    setOptions(data || [])
-    setLoading(false)
+    try {
+      const { data } = await supabase
+        .from('customization_options')
+        .select('*')
+        .order('type')
+        .order('price_modifier')
+        .order('name')
+      setOptions(data || [])
+    } catch {
+      // silently handle fetch error
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => {

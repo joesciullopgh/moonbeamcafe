@@ -41,13 +41,18 @@ export default function OrdersPage() {
     if (!user) return
 
     async function fetchOrders() {
-      const { data } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('user_id', user!.id)
-        .order('created_at', { ascending: false })
-      setOrders((data as Order[]) || [])
-      setLoading(false)
+      try {
+        const { data } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('user_id', user!.id)
+          .order('created_at', { ascending: false })
+        setOrders((data as Order[]) || [])
+      } catch {
+        // fail silently, show empty orders
+      } finally {
+        setLoading(false)
+      }
     }
     fetchOrders()
 

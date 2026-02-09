@@ -40,24 +40,29 @@ export default function AdminSettingsPage() {
 
   useEffect(() => {
     async function load() {
-      const { data } = await supabase
-        .from('store_settings')
-        .select('key, value')
+      try {
+        const { data } = await supabase
+          .from('store_settings')
+          .select('key, value')
 
-      const vals: Record<string, string> = {}
-      if (data) {
-        for (const row of data) {
-          vals[row.key] = row.value
+        const vals: Record<string, string> = {}
+        if (data) {
+          for (const row of data) {
+            vals[row.key] = row.value
+          }
         }
-      }
-      // Fill in defaults for missing keys
-      for (const field of SETTING_FIELDS) {
-        if (!(field.key in vals)) {
-          vals[field.key] = ''
+        // Fill in defaults for missing keys
+        for (const field of SETTING_FIELDS) {
+          if (!(field.key in vals)) {
+            vals[field.key] = ''
+          }
         }
+        setValues(vals)
+      } catch {
+        // silently handle fetch error
+      } finally {
+        setLoading(false)
       }
-      setValues(vals)
-      setLoading(false)
     }
     load()
   }, [supabase])

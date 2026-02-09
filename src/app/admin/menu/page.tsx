@@ -76,6 +76,19 @@ export default function AdminMenuPage() {
     }
   }
 
+  async function togglePopular(item: MenuItem) {
+    const { error } = await supabase
+      .from('menu_items')
+      .update({ is_popular: !item.is_popular })
+      .eq('id', item.id)
+
+    if (!error) {
+      setMenuItems(prev =>
+        prev.map(i => i.id === item.id ? { ...i, is_popular: !i.is_popular } : i)
+      )
+    }
+  }
+
   async function deleteItem(id: string) {
     if (!confirm('Are you sure you want to delete this item?')) return
     const item = menuItems.find(i => i.id === id)
@@ -140,6 +153,7 @@ export default function AdminMenuPage() {
                 <th className="text-left px-4 py-3 font-medium text-primary hidden md:table-cell">Category</th>
                 <th className="text-left px-4 py-3 font-medium text-primary">Price</th>
                 <th className="text-left px-4 py-3 font-medium text-primary">Status</th>
+                <th className="text-center px-4 py-3 font-medium text-primary">Popular</th>
                 <th className="text-center px-4 py-3 font-medium text-primary">Featured</th>
                 <th className="text-right px-4 py-3 font-medium text-primary">Actions</th>
               </tr>
@@ -189,6 +203,19 @@ export default function AdminMenuPage() {
                   </td>
                   <td className="px-4 py-3 text-center" onClick={e => e.stopPropagation()}>
                     <button
+                      onClick={() => togglePopular(item)}
+                      className={`text-xs font-bold px-2 py-1 rounded-full transition-colors ${
+                        item.is_popular
+                          ? 'bg-amber-100 text-amber-800 hover:bg-amber-200'
+                          : 'bg-gray-100 text-gray-400 hover:bg-amber-50 hover:text-amber-600'
+                      }`}
+                      title={item.is_popular ? 'Remove popular badge' : 'Mark as popular'}
+                    >
+                      {item.is_popular ? 'Popular' : 'Set'}
+                    </button>
+                  </td>
+                  <td className="px-4 py-3 text-center" onClick={e => e.stopPropagation()}>
+                    <button
                       onClick={() => toggleFeatured(item)}
                       className={`text-xl transition-colors ${
                         item.is_featured
@@ -220,7 +247,7 @@ export default function AdminMenuPage() {
               ))}
               {menuItems.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-accent">
+                  <td colSpan={8} className="px-4 py-8 text-center text-accent">
                     No menu items yet. Click &quot;Seed Default Menu&quot; to add the full menu, or add items manually.
                   </td>
                 </tr>

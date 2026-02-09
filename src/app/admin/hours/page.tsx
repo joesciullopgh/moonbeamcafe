@@ -34,23 +34,27 @@ export default function AdminHoursPage() {
 
   useEffect(() => {
     async function load() {
-      const [hoursRes, settingsRes] = await Promise.all([
-        supabase.from('store_hours').select('*').order('day_of_week'),
-        supabase.from('store_settings').select('key, value'),
-      ])
+      try {
+        const [hoursRes, settingsRes] = await Promise.all([
+          supabase.from('store_hours').select('*').order('day_of_week'),
+          supabase.from('store_settings').select('key, value'),
+        ])
 
-      if (hoursRes.data && hoursRes.data.length > 0) {
-        setSchedule(hoursRes.data)
-      }
-
-      if (settingsRes.data) {
-        for (const row of settingsRes.data) {
-          if (row.key === 'timezone') setTimezone(row.value)
-          if (row.key === 'last_order_cutoff_minutes') setCutoffMinutes(Number(row.value))
+        if (hoursRes.data && hoursRes.data.length > 0) {
+          setSchedule(hoursRes.data)
         }
-      }
 
-      setLoading(false)
+        if (settingsRes.data) {
+          for (const row of settingsRes.data) {
+            if (row.key === 'timezone') setTimezone(row.value)
+            if (row.key === 'last_order_cutoff_minutes') setCutoffMinutes(Number(row.value))
+          }
+        }
+      } catch {
+        // silently handle fetch error
+      } finally {
+        setLoading(false)
+      }
     }
     load()
   }, [supabase])

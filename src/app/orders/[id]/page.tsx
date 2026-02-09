@@ -54,13 +54,18 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     if (!user) return
 
     async function fetchOrder() {
-      const { data } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('id', id)
-        .single()
-      setOrder(data as Order)
-      setLoading(false)
+      try {
+        const { data } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('id', id)
+          .single()
+        setOrder(data as Order)
+      } catch {
+        // silently handle fetch error
+      } finally {
+        setLoading(false)
+      }
     }
     fetchOrder()
 

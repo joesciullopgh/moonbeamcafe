@@ -36,6 +36,7 @@ export interface MenuItem {
   is_featured: boolean
   featured_tagline: string | null
   featured_order: number
+  is_popular: boolean
   created_at: string
 }
 

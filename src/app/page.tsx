@@ -35,16 +35,21 @@ export default function Home() {
 
   useEffect(() => {
     async function fetchFeatured() {
-      const { data } = await supabase
-        .from('menu_items')
-        .select('id, name, price, description, image_url, featured_tagline, category')
-        .eq('is_featured', true)
-        .eq('is_available', true)
-        .order('featured_order', { ascending: true })
-      if (data && data.length > 0) {
-        setFeaturedItems(data)
+      try {
+        const { data } = await supabase
+          .from('menu_items')
+          .select('id, name, price, description, image_url, featured_tagline, category')
+          .eq('is_featured', true)
+          .eq('is_available', true)
+          .order('featured_order', { ascending: true })
+        if (data && data.length > 0) {
+          setFeaturedItems(data)
+        }
+      } catch {
+        // silently fall back to no featured items
+      } finally {
+        setFeaturedLoading(false)
       }
-      setFeaturedLoading(false)
     }
     fetchFeatured()
   }, [supabase])

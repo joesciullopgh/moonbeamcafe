@@ -9,16 +9,20 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     async function fetchStats() {
-      const [menuRes, ordersRes, usersRes] = await Promise.all([
-        supabase.from('menu_items').select('id', { count: 'exact', head: true }),
-        supabase.from('orders').select('id', { count: 'exact', head: true }),
-        supabase.from('profiles').select('id', { count: 'exact', head: true }),
-      ])
-      setStats({
-        menuItems: menuRes.count || 0,
-        orders: ordersRes.count || 0,
-        users: usersRes.count || 0,
-      })
+      try {
+        const [menuRes, ordersRes, usersRes] = await Promise.all([
+          supabase.from('menu_items').select('id', { count: 'exact', head: true }),
+          supabase.from('orders').select('id', { count: 'exact', head: true }),
+          supabase.from('profiles').select('id', { count: 'exact', head: true }),
+        ])
+        setStats({
+          menuItems: menuRes.count || 0,
+          orders: ordersRes.count || 0,
+          users: usersRes.count || 0,
+        })
+      } catch {
+        // silently handle fetch error
+      }
     }
     fetchStats()
   }, [supabase])
