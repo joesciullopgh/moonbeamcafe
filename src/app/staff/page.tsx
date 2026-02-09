@@ -237,7 +237,23 @@ export default function StaffDashboardPage() {
     })
   }, [supabase])
 
-  // Auto-complete ready orders past the timeout
+  // Auto-complete stale ready orders via DB function.
+  // Runs on load and every 60s so orders complete even if the page
+  // was closed for a while. The DB function updates all orders that
+  // have been in "ready" for > 15 min in a single batch.
+  useEffect(() => {
+    async function sweep() {
+      await supabase.rpc('auto_complete_ready_orders')
+    }
+    // Run immediately on mount
+    sweep()
+    // Then every 60 seconds while the page is open
+    const interval = setInterval(sweep, 60_000)
+    return () => clearInterval(interval)
+  }, [supabase])
+
+  // Client-side fallback: also mark stale orders locally between
+  // the 60s RPC sweeps so the UI stays responsive.
   useEffect(() => {
     const now = Date.now()
     const timeoutMs = READY_TIMEOUT_MINUTES * 60 * 1000
