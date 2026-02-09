@@ -7,6 +7,12 @@ import type { MenuItem } from '@/lib/types/database'
 import { useAuthStore } from '@/stores/auth-store'
 import { uploadMenuImage, deleteMenuImage } from '@/lib/supabase/upload-image'
 
+/** Strip angle brackets that may wrap URLs pasted from markup (e.g. `<https://…>`) */
+function sanitizeImageUrl(url: string | null | undefined): string | null {
+  if (!url) return null
+  return url.replace(/^<|>$/g, '')
+}
+
 type SortField = 'name' | 'category' | 'price' | 'is_available'
 type SortDir = 'asc' | 'desc'
 
@@ -242,10 +248,10 @@ export default function AdminMenuPage() {
                   onClick={() => openForm(item)}
                 >
                   <td className="px-4 py-3">
-                    {item.image_url ? (
+                    {sanitizeImageUrl(item.image_url) ? (
                       /* eslint-disable-next-line @next/next/no-img-element */
                       <img
-                        src={item.image_url}
+                        src={sanitizeImageUrl(item.image_url)!}
                         alt={item.name}
                         className="w-12 h-12 rounded-lg object-cover"
                       />
@@ -400,9 +406,9 @@ function MenuItemModal({
   const [isPopular, setIsPopular] = useState(item?.is_popular ?? false)
   const [featuredTagline, setFeaturedTagline] = useState(item?.featured_tagline || '')
   const [featuredOrder, setFeaturedOrder] = useState(item?.featured_order?.toString() || '0')
-  const [imageUrl, setImageUrl] = useState(item?.image_url || '')
+  const [imageUrl, setImageUrl] = useState(sanitizeImageUrl(item?.image_url) || '')
   const [imageFile, setImageFile] = useState<File | null>(null)
-  const [imagePreview, setImagePreview] = useState<string | null>(item?.image_url || null)
+  const [imagePreview, setImagePreview] = useState<string | null>(sanitizeImageUrl(item?.image_url) || null)
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')

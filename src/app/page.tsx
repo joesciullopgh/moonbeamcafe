@@ -11,11 +11,13 @@ const GOOGLE_PHOTOS_URL = 'https://share.google/QpQgYb0Vfhhg8ls84'
 const GALLERY_IMAGES = [
   '/storefront.jpg',
   '/gallery/1.jpg',
-  '/gallery/2.jpg',
-  '/gallery/3.jpg',
-  '/gallery/4.jpg',
-  '/gallery/5.jpg',
 ]
+
+/** Strip angle brackets that may wrap URLs pasted from markup (e.g. `<https://…>`) */
+function sanitizeImageUrl(url: string | null | undefined): string | null {
+  if (!url) return null
+  return url.replace(/^<|>$/g, '')
+}
 
 interface FeaturedItem {
   id: string
@@ -462,16 +464,17 @@ const CATEGORY_EMOJI: Record<string, string> = {
 
 function FeaturedCard({ item }: { item: FeaturedItem }) {
   const emoji = CATEGORY_EMOJI[item.category] || '☕'
+  const imageUrl = sanitizeImageUrl(item.image_url)
 
   return (
     <Link href="/menu" className="group block">
       <div className="rounded-2xl overflow-hidden bg-white shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-secondary-dark/10">
         {/* Photo area */}
         <div className="relative aspect-[4/3] overflow-hidden">
-          {item.image_url ? (
+          {imageUrl ? (
             /* eslint-disable-next-line @next/next/no-img-element */
             <img
-              src={item.image_url}
+              src={imageUrl}
               alt={item.name}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
             />

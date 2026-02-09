@@ -9,6 +9,12 @@ import { useCartStore, type CartCustomization } from '@/stores/cart-store'
 import CustomizationModal from '@/components/CustomizationModal'
 import FavoriteButton from '@/components/FavoriteButton'
 
+/** Strip angle brackets that may wrap URLs pasted from markup (e.g. `<https://…>`) */
+function sanitizeImageUrl(url: string | null | undefined): string | null {
+  if (!url) return null
+  return url.replace(/^<|>$/g, '')
+}
+
 export default function MenuPage() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -223,7 +229,7 @@ function MenuCard({
   const isCustomizable = 'customizable' in item ? item.customizable : false
   const isMenuItem = !usingFallback && 'id' in item
   const categoryIcon = CATEGORY_ICONS[item.category] || '☕'
-  const imageUrl = isMenuItem ? (item as MenuItem).image_url : null
+  const imageUrl = isMenuItem ? sanitizeImageUrl((item as MenuItem).image_url) : null
   const isPopular = isMenuItem ? (item as MenuItem).is_popular : false
 
   function handleAddToCart() {
