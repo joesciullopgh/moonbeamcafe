@@ -24,6 +24,8 @@ export default function AdminOrdersPage() {
   useEffect(() => {
     async function fetchOrders() {
       try {
+        // Complete any orders stuck in "ready" for > 15 min
+        await supabase.rpc('auto_complete_ready_orders')
         const { data } = await supabase
           .from('orders')
           .select('*')

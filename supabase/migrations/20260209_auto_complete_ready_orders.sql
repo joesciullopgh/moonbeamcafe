@@ -1,10 +1,12 @@
 -- ============================================================
--- Auto-complete ready orders after 15 minutes (server-side)
+-- Auto-complete ready orders after 15 minutes
 --
 -- Previously this logic only ran client-side in the staff
 -- dashboard, so orders would stay in "ready" forever if no
--- one had the page open. This migration moves it to a
--- database function invoked by pg_cron every minute.
+-- one had the page open. This adds:
+--   1. An updated_at column + trigger for reliable timestamps
+--   2. A callable function that any page can invoke via RPC
+--      to batch-complete stale ready orders
 -- ============================================================
 
 -- 1. Add updated_at column so we can reliably track when the
@@ -28,7 +30,8 @@ CREATE TRIGGER orders_set_updated_at
   FOR EACH ROW EXECUTE FUNCTION set_orders_updated_at();
 
 -- 3. Function that auto-completes orders sitting in "ready"
---    for longer than 15 minutes.
+--    for longer than 15 minutes. Called via supabase.rpc()
+--    from any page that loads orders.
 CREATE OR REPLACE FUNCTION auto_complete_ready_orders()
 RETURNS integer LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
@@ -43,16 +46,7 @@ BEGIN
   RETURN affected;
 END; $$;
 
--- 4. Schedule with pg_cron to run every minute.
---    pg_cron is enabled by default on Supabase.
---    The job name allows idempotent re-runs of this migration.
-SELECT cron.unschedule('auto-complete-ready-orders')
-WHERE EXISTS (
-  SELECT 1 FROM cron.job WHERE jobname = 'auto-complete-ready-orders'
-);
-
-SELECT cron.schedule(
-  'auto-complete-ready-orders',
-  '* * * * *',
-  $$SELECT auto_complete_ready_orders()$$
-);
+-- 4. Allow any authenticated user to call the cleanup function.
+--    The function is SECURITY DEFINER so it can update orders
+--    regardless of RLS policies.
+GRANT EXECUTE ON FUNCTION auto_complete_ready_orders() TO authenticated;
