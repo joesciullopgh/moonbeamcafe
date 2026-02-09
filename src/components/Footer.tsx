@@ -1,11 +1,36 @@
 'use client'
 
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { createClient } from '@/lib/supabase/client'
 import { useStoreSettings } from '@/stores/store-settings'
+import { DEFAULT_SCHEDULE, formatScheduleSummary } from '@/lib/store-hours'
+import type { DaySchedule } from '@/lib/store-hours'
 
 export default function Footer() {
   const { settings } = useStoreSettings()
+  const [hoursLines, setHoursLines] = useState<string[]>([])
+  const supabase = useMemo(() => createClient(), [])
+
+  useEffect(() => {
+    let cancelled = false
+    async function fetchHours() {
+      try {
+        const { data } = await supabase
+          .from('store_hours')
+          .select('*')
+          .order('day_of_week')
+        if (cancelled) return
+        const schedule: DaySchedule[] = data?.length ? data : DEFAULT_SCHEDULE
+        setHoursLines(formatScheduleSummary(schedule))
+      } catch {
+        if (!cancelled) setHoursLines(formatScheduleSummary(DEFAULT_SCHEDULE))
+      }
+    }
+    fetchHours()
+    return () => { cancelled = true }
+  }, [supabase])
 
   return (
     <footer className="bg-primary text-secondary">
@@ -41,8 +66,15 @@ export default function Footer() {
               </p>
             </address>
             <div className="mt-4 text-sm text-secondary/80 space-y-1">
-              <p>{settings.hours_weekday}</p>
-              <p>{settings.hours_weekend}</p>
+              {hoursLines.length > 0
+                ? hoursLines.map((line, i) => <p key={i}>{line}</p>)
+                : (
+                  <>
+                    <p>{settings.hours_weekday}</p>
+                    <p>{settings.hours_weekend}</p>
+                  </>
+                )
+              }
             </div>
           </div>
 

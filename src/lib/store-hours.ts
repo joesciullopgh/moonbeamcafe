@@ -259,6 +259,60 @@ export function getStoreStatus(
   }
 }
 
+// ── Schedule Summary (for footer / homepage display) ──────────
+
+const DAY_ABBR = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+
+/**
+ * Summarise a weekly schedule into compact human-readable lines by
+ * grouping consecutive days that share the same hours, e.g.:
+ *   ["Mon–Sat: 7:00 AM – 5:00 PM", "Sun: 9:00 AM – 3:00 PM"]
+ */
+export function formatScheduleSummary(schedule: DaySchedule[]): string[] {
+  // Build a map: dayOfWeek → signature string
+  const ordered = [1, 2, 3, 4, 5, 6, 0] // Mon-first display order
+  const sigMap = new Map<number, string>()
+  for (const day of schedule) {
+    if (day.is_closed || day.ranges.length === 0) {
+      sigMap.set(day.day_of_week, 'CLOSED')
+    } else {
+      const sig = day.ranges
+        .map(r => `${r.open}-${r.close}`)
+        .sort()
+        .join(',')
+      sigMap.set(day.day_of_week, sig)
+    }
+  }
+
+  // Group consecutive days (in display order) with the same signature
+  const groups: { days: number[]; sig: string }[] = []
+  for (const d of ordered) {
+    const sig = sigMap.get(d) ?? 'CLOSED'
+    const last = groups[groups.length - 1]
+    if (last && last.sig === sig) {
+      last.days.push(d)
+    } else {
+      groups.push({ days: [d], sig })
+    }
+  }
+
+  // Format each group into a readable line
+  return groups.map(g => {
+    const first = DAY_ABBR[g.days[0]]
+    const last = DAY_ABBR[g.days[g.days.length - 1]]
+    const label = g.days.length === 1 ? first : `${first}–${last}`
+
+    if (g.sig === 'CLOSED') return `${label}: Closed`
+
+    // Parse the ranges back from the signature
+    const rangeStrs = g.sig.split(',').map(part => {
+      const [open, close] = part.split('-')
+      return `${formatTime(open)} – ${formatTime(close)}`
+    })
+    return `${label}: ${rangeStrs.join(', ')}`
+  })
+}
+
 // ── Validation Helpers ─────────────────────────────────────────
 
 export function validateTimeRange(range: TimeRange): string | null {
