@@ -326,59 +326,63 @@ function MenuItemModal({
     setError('')
     setSaving(true)
 
-    const parsedPrice = parseFloat(price)
-    if (isNaN(parsedPrice) || parsedPrice < 0) {
-      setError('Please enter a valid price')
-      setSaving(false)
-      return
-    }
-
-    let finalImageUrl = imageUrl
-    if (imageFile) {
-      setUploading(true)
-      const url = await uploadMenuImage(imageFile, item?.id)
-      setUploading(false)
-      if (!url) {
-        setError('Failed to upload image. Make sure you\'ve run the storage bucket SQL.')
-        setSaving(false)
+    try {
+      const parsedPrice = parseFloat(price)
+      if (isNaN(parsedPrice) || parsedPrice < 0) {
+        setError('Please enter a valid price')
         return
       }
-      if (item?.image_url) {
-        await deleteMenuImage(item.image_url)
+
+      let finalImageUrl = imageUrl
+      if (imageFile) {
+        setUploading(true)
+        const url = await uploadMenuImage(imageFile, item?.id)
+        setUploading(false)
+        if (!url) {
+          setError('Failed to upload image. Please try again.')
+          return
+        }
+        if (item?.image_url) {
+          await deleteMenuImage(item.image_url)
+        }
+        finalImageUrl = url
       }
-      finalImageUrl = url
-    }
 
-    if (!imagePreview && item?.image_url) {
-      await deleteMenuImage(item.image_url)
-      finalImageUrl = ''
-    }
+      if (!imagePreview && item?.image_url) {
+        await deleteMenuImage(item.image_url)
+        finalImageUrl = ''
+      }
 
-    const data = {
-      name,
-      description,
-      price: parsedPrice,
-      category,
-      customizable,
-      is_available: isAvailable,
-      is_featured: isFeatured,
-      featured_tagline: featuredTagline || null,
-      featured_order: parseInt(featuredOrder) || 0,
-      image_url: finalImageUrl || null,
-    }
+      const data = {
+        name,
+        description,
+        price: parsedPrice,
+        category,
+        customizable,
+        is_available: isAvailable,
+        is_featured: isFeatured,
+        featured_tagline: featuredTagline || null,
+        featured_order: parseInt(featuredOrder) || 0,
+        image_url: finalImageUrl || null,
+      }
 
-    let result
-    if (item) {
-      result = await supabase.from('menu_items').update(data).eq('id', item.id)
-    } else {
-      result = await supabase.from('menu_items').insert(data)
-    }
+      let result
+      if (item) {
+        result = await supabase.from('menu_items').update(data).eq('id', item.id)
+      } else {
+        result = await supabase.from('menu_items').insert(data)
+      }
 
-    if (result.error) {
-      setError(result.error.message)
+      if (result.error) {
+        setError(result.error.message)
+      } else {
+        await onSave()
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
+    } finally {
+      setUploading(false)
       setSaving(false)
-    } else {
-      await onSave()
     }
   }
 
